@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jenny Huynh — Personal Website</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2395D5B2'/%3E%3Ctext x='50' y='68' font-size='56' text-anchor='middle' fill='%235D4E37' font-family='Nunito,Arial,sans-serif'%3EJH%3C/text%3E%3C/svg%3E" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Animal Crossing Pastel Nature Palette */
+      --bg-sky: #B8E0D2;
+      --bg-grass: #D5ECC2;
+      --bg-cream: #FAF3E0;
+      --text-primary: #5D4E37;
+      --text-secondary: #7A6B5A;
+      --text-muted: #9B8B7A;
+      --accent-mint: #95D5B2;
+      --accent-sage: #74C69D;
+      --accent-peach: #FFCDB2;
+      --accent-pink: #FFB4A2;
+      --accent-lavender: #E5C1CD;
+      --accent-butter: #FFF3B0;
+      --accent-sky: #A2D2FF;
+      --border: rgba(93, 78, 55, 0.15);
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --glow-mint: rgba(149, 213, 178, 0.6);
+      --glow-peach: rgba(255, 205, 178, 0.6);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(180deg, var(--bg-sky) 0%, var(--bg-grass) 50%, var(--bg-cream) 100%);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Game Canvas Background - NOW IN HERO ONLY */
+    #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    /* Game UI - positioned to the right, INSIDE HERO */
+    .game-ui {
+      position: absolute;
+      top: 80px;
+      right: 80px;
+      left: auto;
+      transform: none;
+      z-index: 50;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .game-hint {
+      background: rgba(255, 255, 255, 0.9);
+      border: 3px solid var(--accent-sage);
+      padding: 0.5rem 1rem;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      animation: fadeInOut 3s ease-in-out infinite;
+      box-shadow: 0 4px 15px rgba(116, 198, 157, 0.3);
+    }
+
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    .game-score {
+      font-family: 'Nunito', sans-serif;
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      text-shadow: 3px 3px 0 white, -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white;
+      margin-top: 0.5rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .game-score.visible {
+      opacity: 1;
+    }
+
+    /* Game Over - positioned to the right, INSIDE HERO */
+    .game-over {
+      position: absolute;
+      top: 50%;
+      right: 80px;
+      left: auto;
+      transform: translateY(-50%);
+      background: var(--card-bg);
+      border: 4px solid var(--accent-sage);
+      padding: 2rem 3rem;
+      border-radius: 24px;
+      text-align: center;
+      z-index: 200;
+      backdrop-filter: blur(10px);
+      display: none;
+      box-shadow: 0 10px 40px rgba(116, 198, 157, 0.3);
+    }
+
+    .game-over h3 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      color: var(--accent-sage);
+    }
+
+    .game-over p {
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .game-over .final-score {
+      font-family: 'Nunito', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--accent-peach);
+    }
+
+    .game-over .high-score-display {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent-sage);
+      margin-top: 0.5rem;
+    }
+
+    .game-over .high-score-display.new-record {
+      color: var(--accent-peach);
+      animation: celebrate 0.5s ease-in-out infinite;
+    }
+
+    @keyframes celebrate {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .game-over .restart-hint {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-sage);
+      margin-top: 1.5rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--bg-grass);
+      border-radius: 100px;
+      animation: pulseHint 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulseHint {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+
+    /* Start Screen - positioned to the right, INSIDE HERO */
+    .game-start {
+      position: absolute;
+      top: 50%;
+      right: 80px;
+      left: auto;
+      transform: translateY(-50%);
+      z-index: 150;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .game-start.hidden {
+      display: none;
+    }
+
+    .start-content {
+      background: var(--card-bg);
+      border: 4px solid var(--accent-sage);
+      padding: 2.5rem 3.5rem;
+      border-radius: 24px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 15px 50px rgba(116, 198, 157, 0.4);
+    }
+
+    .start-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent-sage);
+      margin-bottom: 1rem;
+    }
+
+    .start-prompt {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      padding: 0.75rem 1.5rem;
+      background: var(--accent-mint);
+      border-radius: 100px;
+      animation: pulseHint 1.5s ease-in-out infinite;
+    }
+
+    .start-tips {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-top: 1rem;
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      padding: 1.25rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 3px solid var(--border);
+    }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--accent-sage);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent-sage);
+    }
+
+    .nav-cta {
+      padding: 0.6rem 1.25rem;
+      background: var(--accent-mint);
+      border-radius: 100px;
+      color: var(--text-primary) !important;
+      font-weight: 700;
+      box-shadow: 0 4px 15px var(--glow-mint);
+    }
+
+    /* Content */
+    .content {
+      position: relative;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .content a, .content button, .content input {
+      pointer-events: auto;
+    }
+
+    /* Hero Section - CONTAINER FOR GAME */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8rem 3rem 4rem;
+      max-width: none;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      max-width: 700px;
+      margin-left: 3rem;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(255, 255, 255, 0.9);
+      border: 3px solid var(--accent-mint);
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      width: fit-content;
+      margin-bottom: 1.5rem;
+      animation: float 6s ease-in-out infinite;
+      box-shadow: 0 4px 15px var(--glow-mint);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .hero-badge .dot {
+      width: 10px;
+      height: 10px;
+      background: var(--accent-sage);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.2); }
+    }
+
+    .eyebrow {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 8vw, 4.5rem);
+      font-weight: 800;
+      line-height: 1.05;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .hero h1 .line {
+      display: block;
+      opacity: 0;
+      transform: translateY(50px);
+      animation: revealLine 0.8s ease forwards;
+    }
+
+    .hero h1 .line:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    @keyframes revealLine {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, var(--accent-sage) 0%, var(--accent-peach) 50%, var(--accent-lavender) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-description {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin-bottom: 1rem;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.4s;
+    }
+
+    .hero-description.tagline {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+    }
+
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.8s ease forwards 0.5s;
+    }
+
+    .tag {
+      padding: 0.5rem 1rem;
+      background: rgba(255, 255, 255, 0.9);
+      border: 3px solid var(--border);
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      pointer-events: auto;
+    }
+
+    .tag:hover {
+      border-color: var(--accent-sage);
+      color: var(--text-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px var(--glow-mint);
+    }
+
+    .tag.stanford {
+      border-color: var(--accent-peach);
+      color: #c75050;
+    }
+
+    .tag.pika {
+      border-color: var(--accent-lavender);
+      color: #9b6b8a;
+    }
+
+    .tag.forbes {
+      border-color: var(--accent-butter);
+      color: #9b8b3a;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 1rem;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.8s ease forwards 0.6s;
+    }
+
+    .btn {
+      padding: 0.875rem 1.75rem;
+      border-radius: 100px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      pointer-events: auto;
+    }
+
+    .btn-primary {
+      background: var(--accent-mint);
+      color: var(--text-primary);
+      box-shadow: 0 6px 25px var(--glow-mint);
+      border: 3px solid var(--accent-sage);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 12px 35px var(--glow-mint);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.9);
+      border: 3px solid var(--border);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background: white;
+      border-color: var(--accent-peach);
+      transform: translateY(-3px);
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: flex;
+      gap: 3rem;
+      padding: 2rem 0;
+      margin-top: 3rem;
+      border-top: 3px solid var(--border);
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.7s;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-sage) 0%, var(--accent-peach) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      font-weight: 600;
+    }
+
+    /* Sections - WITH SOLID BACKGROUND */
+    section {
+      position: relative;
+      padding: 6rem 3rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--bg-cream);
+    }
+
+    section#projects, section#roadmap, section#about, section#contact {
+      background: linear-gradient(180deg, var(--bg-grass) 0%, var(--bg-cream) 100%);
+    }
+
+    .section-header {
+      margin-bottom: 3rem;
+      text-align: center;
+    }
+
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent-sage);
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    /* Cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card-3d {
+      background: var(--card-bg);
+      border: 3px solid var(--border);
+      border-radius: 24px;
+      padding: 2rem;
+      transition: all 0.4s ease;
+      backdrop-filter: blur(10px);
+      pointer-events: auto;
+    }
+
+    .card-3d:hover {
+      border-color: var(--accent-sage);
+      transform: translateY(-8px);
+      box-shadow: 0 20px 50px rgba(116, 198, 157, 0.25);
+    }
+
+    .card-3d .icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--accent-mint) 0%, var(--accent-sage) 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      font-size: 1.5rem;
+      box-shadow: 0 8px 25px var(--glow-mint);
+    }
+
+    .card-3d h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-3d p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .card-tags {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .card-tag {
+      padding: 0.35rem 0.75rem;
+      background: var(--bg-grass);
+      border-radius: 100px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+
+    .card-actions .btn {
+      padding: 0.6rem 1.25rem;
+      font-size: 0.85rem;
+    }
+
+    /* Roadmap */
+    .roadmap-list {
+      list-style: none;
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .roadmap-list::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, var(--accent-sage) 0%, var(--accent-peach) 100%);
+      border-radius: 4px;
+    }
+
+    .roadmap-list li {
+      position: relative;
+      padding: 1.25rem 0 1.25rem 1.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .roadmap-list li:last-child {
+      border-bottom: none;
+    }
+
+    .roadmap-list li::before {
+      content: '';
+      position: absolute;
+      left: -2rem;
+      top: 1.5rem;
+      width: 16px;
+      height: 16px;
+      background: var(--accent-mint);
+      border: 4px solid var(--accent-sage);
+      border-radius: 50%;
+      transform: translateX(-6px);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.3rem 0.75rem;
+      background: var(--accent-mint);
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-right: 0.75rem;
+    }
+
+    /* About */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    .about-image {
+      position: relative;
+    }
+
+    .about-image img {
+      width: 100%;
+      border-radius: 24px;
+      border: 4px solid var(--accent-mint);
+      box-shadow: 0 20px 50px var(--glow-mint);
+      object-fit: cover;
+      aspect-ratio: 3/4;
+    }
+
+    .about-content h2 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+    }
+
+    .about-content p {
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    .about-content .highlight {
+      color: var(--accent-sage);
+      font-weight: 700;
+    }
+
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 2rem;
+    }
+
+    .skill-tag {
+      padding: 0.6rem 1.2rem;
+      background: var(--bg-grass);
+      border: 3px solid var(--border);
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: all 0.3s ease;
+      pointer-events: auto;
+    }
+
+    .skill-tag:hover {
+      border-color: var(--accent-sage);
+      color: var(--text-primary);
+      box-shadow: 0 8px 25px var(--glow-mint);
+    }
+
+    /* Connect */
+    .connect-section {
+      text-align: center;
+      padding: 8rem 3rem;
+    }
+
+    .connect-section h2 {
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--accent-sage) 0%, var(--accent-peach) 50%, var(--accent-lavender) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .connect-section p {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+    }
+
+    .connect-ctas {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .social-link {
+      width: 56px;
+      height: 56px;
+      background: var(--card-bg);
+      border: 3px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.4s ease;
+      text-decoration: none;
+      pointer-events: auto;
+    }
+
+    .social-link:hover {
+      border-color: var(--accent-sage);
+      transform: translateY(-8px) scale(1.1);
+      box-shadow: 0 15px 35px var(--glow-mint);
+    }
+
+    .social-link svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--text-secondary);
+      transition: fill 0.3s ease;
+    }
+
+    .social-link:hover svg {
+      fill: var(--accent-sage);
+    }
+
+    /* Footer */
+    footer {
+      padding: 2rem 3rem;
+      border-top: 3px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    footer p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    footer a:hover {
+      color: var(--accent-sage);
+    }
+
+    footer .heart {
+      color: var(--accent-peach);
+      animation: heartbeat 1.5s infinite;
+    }
+
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    /* Reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(50px);
+      transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Mobile */
+    @media (max-width: 968px) {
+      nav {
+        padding: 1rem 1.5rem;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .hero {
+        padding: 6rem 1.5rem 3rem;
+        max-width: 100%;
+        margin-left: 0;
+      }
+
+      .hero-content {
+        margin-left: 0;
+      }
+
+      .card-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .about-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-bar {
+        flex-wrap: wrap;
+        gap: 2rem;
+      }
+
+      section {
+        padding: 4rem 1.5rem;
+      }
+
+      .connect-section h2 {
+        font-size: 2rem;
+      }
+
+      .connect-ctas {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .game-hint {
+        display: none;
+      }
+
+      /* Move game UI elements to center on mobile */
+      .game-start, .game-over {
+        right: auto;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .game-ui {
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="#" class="logo">jenny.dev 🌿</a>
+    <ul class="nav-links">
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#contact" class="nav-cta">Contact</a></li>
+    </ul>
+  </nav>
+
+  <div class="content">
+    <section class="hero">
+      <!-- GAME ELEMENTS INSIDE HERO -->
+      <canvas id="game-canvas"></canvas>
+
+      <div class="game-ui">
+        <div class="game-hint" id="game-hint">Press SPACE to play 🌸</div>
+        <div class="game-score" id="score">0</div>
+      </div>
+
+      <div class="game-start" id="game-start">
+        <div class="start-content">
+          <div class="start-title">🌿 Flappy Jenny 🌸</div>
+          <div class="start-prompt">Press SPACE or TAP to start!</div>
+          <div class="start-tips">Collect 🔔 bells for bonus points!</div>
+        </div>
+      </div>
+
+      <div class="game-over" id="game-over">
+        <h3>Game Over!</h3>
+        <p>Your score</p>
+        <div class="final-score" id="final-score">0</div>
+        <div class="high-score-display">Best: <span id="high-score">0</span></div>
+        <div class="restart-hint">Press SPACE to play again</div>
+      </div>
+
+      <!-- HERO CONTENT -->
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          Open to opportunities
+        </div>
+
+        <p class="eyebrow">Hello, I'm</p>
+        <h1>
+          <span class="line"><span class="gradient-text">Jenny Huynh</span></span>
+        </h1>
+
+        <p class="hero-description tagline">I bring ideas to life through product thinking and storytelling.</p>
+        
+        <p class="hero-description">👋 Hi! I'm an undergrad at Stanford studying Symbolic Systems, passionate about entrepreneurship, content creation, social media, marketing, tech & product!</p>
+
+        <div class="hero-tags">
+          <span class="tag stanford">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>
+            Stanford — Symbolic Systems
+          </span>
+          <span class="tag forbes">🏆 Forbes 30 Under 30 Asia</span>
+          <span class="tag">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/><path fill="#fff" d="M9.545 15.568V8.432L15.818 12z"/></svg>
+            15M+ Followers
+          </span>
+        </div>
+
+        <div class="hero-ctas">
+          <a href="#projects" class="btn btn-primary">
+            View Projects
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+          <a href="#contact" class="btn btn-secondary">Get in Touch</a>
+        </div>
+
+        <div class="stats-bar">
+          <div class="stat-item">
+            <span class="stat-value">15M+</span>
+            <span class="stat-label">Total Followers</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">1B+</span>
+            <span class="stat-label">Total Views</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">2019</span>
+            <span class="stat-label">Creating Since</span>
+          </div>
+        </div>
+      </div><!-- END hero-content -->
+    </section>
+
+    <section id="projects">
+      <div class="section-header reveal">
+        <p class="section-label">// What I've Built</p>
+        <h2 class="section-title">Projects</h2>
+      </div>
+
+      <div class="card-grid">
+        <div class="card-3d reveal">
+          <div class="icon">👨‍🍳</div>
+          <h3>Cooking Papa</h3>
+          <p>Teaching men how to cook through a gamified cooking experience with the Apple Vision Pro.</p>
+          <div class="card-tags">
+            <span class="card-tag">Frontend Design</span>
+            <span class="card-tag">VR/AR</span>
+          </div>
+          <div class="card-actions">
+            <a href="https://docs.google.com/presentation/d/1Ob5Disw3JNsRZPZ1b7Gq-r7y4iuMSo1AJPE_iHIn27U/edit?usp=sharing" class="btn btn-primary" target="_blank">See more</a>
+            <a href="https://drive.google.com/file/d/1j0KPlRnW3lCmUOpHWBqsLapWxYhyXymt/view?usp=sharing" class="btn btn-secondary" target="_blank">Demo</a>
+          </div>
+        </div>
+
+        <div class="card-3d reveal">
+          <div class="icon">🗺️</div>
+          <h3>Atlas</h3>
+          <p>Enables older adults to share their rich histories and experiences with younger generations.</p>
+          <div class="card-tags">
+            <span class="card-tag">React Native</span>
+            <span class="card-tag">CS147</span>
+          </div>
+          <div class="card-actions">
+            <a href="https://hci.stanford.edu/courses/cs147/2024/au/projects/Designing-AI-for-Older-Adults/Atlas/" class="btn btn-primary" target="_blank">See more</a>
+            <a href="https://www.youtube.com/watch?v=PL-9t2C86RQ" class="btn btn-secondary" target="_blank">Concept</a>
+          </div>
+        </div>
+
+        <div class="card-3d reveal">
+          <div class="icon">💕</div>
+          <h3>VR tines</h3>
+          <p>An immersive VR dating experience for long distance lovers.</p>
+          <div class="card-tags">
+            <span class="card-tag">C++</span>
+            <span class="card-tag">Unity</span>
+            <span class="card-tag">🏆 TreeHacks Award</span>
+          </div>
+          <div class="card-actions">
+            <a href="https://devpost.com/software/vr-tines" class="btn btn-primary" target="_blank">See more</a>
+            <a href="https://www.youtube.com/watch?v=zOW5E1oHc_g" class="btn btn-secondary" target="_blank">Demo</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <div class="section-header reveal">
+        <p class="section-label">// My Journey</p>
+        <h2 class="section-title">Roadmap</h2>
+      </div>
+
+      <div class="card-3d reveal">
+        <ul class="roadmap-list">
+          <li>
+            <span class="badge">2018</span>
+            Started Jenny Slimey, a slime business / social media channel with 500k+ followers and 20k total sales
+          </li>
+          <li>
+            <span class="badge">2019</span>
+            Started Jenny Huynh social media channels, where I document my life and explore my creativity
+          </li>
+          <li>
+            <span class="badge">2020</span>
+            Reached my first 1 million followers
+          </li>
+          <li>
+            <span class="badge">2022</span>
+            Reached 1 billion views; founded "Whoop", a creative clothing brand reaching 100k+ followers
+          </li>
+          <li>
+            <span class="badge">2023</span>
+            Got into my dream school, and started my university journey at Stanford, studying BS. Symbolic Systems (HCI)
+          </li>
+          <li>
+            <span class="badge">2025</span>
+            Got on the Forbes 30 Under 30 Asia list, under Social Media, Marketing and Advertising. Studied abroad at Peking University, Beijing
+          </li>
+          <li>
+            <span class="badge">Present</span>
+            Have a cumulative following of 15 million across 5 social media platforms. Interned on product team at TikTok & Pika Labs.
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="about">
+      <div class="about-grid">
+        <div class="about-image reveal">
+          <img src="./jenny-photo.jpg" alt="Jenny Huynh">
+        </div>
+        <div class="about-content reveal">
+          <p class="section-label">// About Me</p>
+          <h2>Nice to meet you 👋</h2>
+          <p>
+            I'm a Stanford student studying <span class="highlight">Symbolic Systems</span> with a concentration in HCI, passionate about building thoughtful products at the intersection of creativity, technology, and storytelling. I hope to grow deeper in product strategy and development, especially in spaces where content, community, and creativity meet—like film, digital creation, and emerging media.
+          </p>
+          <p>
+            I was born and raised in <span class="highlight">Ho Chi Minh City, Vietnam</span>, and moved to the U.S. at 15. I started experimenting with content when I was 9 (posting my first YouTube video long before I knew it counted), and officially began my social media journey at 12. Since then, storytelling—whether through video, design, or product—has been my passion!
+          </p>
+          <p>
+            Outside of school, I love working on creative side projects. I've built design-driven small businesses like <span class="highlight">Jenny Slimey</span> (a slime shop I launched at 12) and <span class="highlight">Whoop</span> (a clothing brand where I hand-illustrated each graphic). When I'm not working on product or creative projects, you'll find me hanging out with my bunny <span class="highlight">Bambi</span>, rewatching Disney movies, or planning another Disneyland trip 🏰
+          </p>
+          <div class="skills-list">
+            <span class="skill-tag">Product Strategy</span>
+            <span class="skill-tag">Video Production</span>
+            <span class="skill-tag">Storytelling</span>
+            <span class="skill-tag">HCI</span>
+            <span class="skill-tag">Content Strategy</span>
+            <span class="skill-tag">Visual Branding</span>
+            <span class="skill-tag">React Native</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="connect-section">
+      <h2 class="reveal">Let's Connect</h2>
+      <p class="reveal">Interested in working together or just want to say hi?</p>
+      
+      <div class="connect-ctas reveal">
+        <a href="mailto:jennyh23@stanford.edu" class="btn btn-primary">Email Me</a>
+        <a href="https://www.linkedin.com/in/jennyhuynh23/" class="btn btn-secondary" target="_blank">LinkedIn</a>
+      </div>
+
+      <div class="social-links reveal">
+        <a href="https://www.youtube.com/@jennyhuynh" class="social-link" target="_blank" aria-label="YouTube">
+          <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+        </a>
+        <a href="https://www.instagram.com/jenny.huynh._/" class="social-link" target="_blank" aria-label="Instagram">
+          <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+        </a>
+        <a href="https://www.tiktok.com/@jenny.huynh._" class="social-link" target="_blank" aria-label="TikTok">
+          <svg viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+        </a>
+        <a href="https://www.facebook.com/officialjennyhuynh/" class="social-link" target="_blank" aria-label="Facebook">
+          <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        </a>
+        <a href="https://www.linkedin.com/in/jennyhuynh23/" class="social-link" target="_blank" aria-label="LinkedIn">
+          <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        </a>
+      </div>
+    </section>
+
+    <footer>
+      <p>© 2026 Jenny Huynh</p>
+      <a href="#home">Back to top ↑</a>
+    </footer>
+  </div>
+
+  <script>
+    // ============================================
+    // FLAPPY JENNY GAME - Animal Crossing Style!
+    // ============================================
+
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    const gameOverScreen = document.getElementById('game-over');
+    const finalScoreDisplay = document.getElementById('final-score');
+    const gameStartScreen = document.getElementById('game-start');
+    const gameHint = document.getElementById('game-hint');
+    const highScoreDisplay = document.getElementById('high-score');
+    const highScoreContainer = highScoreDisplay.parentElement;
+
+    // High score from localStorage
+    let highScore = parseInt(localStorage.getItem('flappyJennyHighScore')) || 0;
+    highScoreDisplay.textContent = highScore;
+
+    // Bells (Animal Crossing style collectibles)
+    let bells = [];
+
+    // Score particles
+    let scoreParticles = [];
+
+    // Screen shake
+    let screenShake = 0;
+
+    // Canvas setup - SIZE TO HERO SECTION
+    const heroSection = document.querySelector('.hero');
+
+    function resizeCanvas() {
+      canvas.width = heroSection.offsetWidth;
+      canvas.height = heroSection.offsetHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Game state
+    let gameStarted = false;
+    let gameOver = false;
+    let score = 0;
+
+    // Jenny character - positioned more to the right
+    const jenny = {
+      x: Math.max(heroSection.offsetWidth * 0.55, 400),
+      y: 0,
+      width: 32,
+      height: 40,
+      velocity: 0,
+      gravity: 0.35,
+      jump: -7.5,
+      frame: 0,
+      frameTimer: 0
+    };
+
+    // Pipes (now trees/logs) - spawn from further right
+    let pipes = [];
+    const pipeWidth = 70;
+    const pipeGap = 180;
+    const pipeSpeed = 2.5;
+    let pipeTimer = 0;
+    const pipeInterval = 140;
+
+    // Animal Crossing Colors
+    const colors = {
+      sky: '#B8E0D2',
+      skyLight: '#D5F5E3',
+      grass: '#90C695',
+      grassDark: '#6BA368',
+      tree: '#8B7355',
+      treeDark: '#6B5344',
+      leaves: '#95D5B2',
+      leavesDark: '#74C69D',
+      skin: '#FFE4C9',
+      hair: '#3D2914',
+      shirt: '#FF6B6B',
+      skirt: '#FFF3B0',
+      clouds: 'rgba(255, 255, 255, 0.9)',
+      particles: ['#FFD6E0', '#C1E1C1', '#C4E4F9', '#FFF9C4', '#E8D5F2']
+    };
+
+    // Clouds - use canvas dimensions
+    const clouds = [];
+    for (let i = 0; i < 8; i++) {
+      clouds.push({
+        x: Math.random() * canvas.width * 1.5,
+        y: Math.random() * (canvas.height * 0.4) + 30,
+        size: Math.random() * 60 + 40,
+        speed: Math.random() * 0.3 + 0.1
+      });
+    }
+
+    // Flowers/decorations
+    const flowers = [];
+    for (let i = 0; i < 30; i++) {
+      flowers.push({
+        x: Math.random() * canvas.width,
+        y: canvas.height - 30 - Math.random() * 20,
+        size: Math.random() * 8 + 4,
+        color: colors.particles[Math.floor(Math.random() * colors.particles.length)],
+        sway: Math.random() * Math.PI * 2
+      });
+    }
+
+    // Butterflies
+    const butterflies = [];
+    for (let i = 0; i < 5; i++) {
+      butterflies.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * (canvas.height * 0.6) + 50,
+        size: Math.random() * 6 + 4,
+        color: colors.particles[Math.floor(Math.random() * colors.particles.length)],
+        wingPhase: Math.random() * Math.PI * 2,
+        dx: (Math.random() - 0.5) * 2,
+        dy: (Math.random() - 0.5) * 1,
+        wobble: Math.random() * Math.PI * 2
+      });
+    }
+
+    // Current game speed (increases with score)
+    let currentSpeed = pipeSpeed;
+
+    // Trail particles (leaves behind Jenny)
+    let trailParticles = [];
+
+    // Game boundaries - only right portion of hero
+    let gameAreaLeft = Math.max(canvas.width * 0.35, 300);
+
+    // Initialize
+    function init() {
+      gameAreaLeft = Math.max(canvas.width * 0.35, 300);
+      jenny.x = Math.max(canvas.width * 0.55, 400);
+      jenny.y = canvas.height / 2;
+      jenny.velocity = 0;
+      jenny.frame = 0;
+      pipes = [];
+      bells = [];
+      scoreParticles = [];
+      trailParticles = [];
+      screenShake = 0;
+      score = 0;
+      pipeTimer = 0;
+      currentSpeed = pipeSpeed;
+      gameOver = false;
+      gameOverScreen.style.display = 'none';
+      highScoreContainer.classList.remove('new-record');
+      scoreDisplay.classList.remove('visible');
+    }
+
+    // Spawn bell between pipes
+    function spawnBell(pipeX, gapY, gapHeight) {
+      if (Math.random() < 0.6) {
+        bells.push({
+          x: pipeX + pipeWidth / 2,
+          y: gapY + gapHeight / 2 + (Math.random() - 0.5) * 60,
+          size: 12,
+          collected: false,
+          bobOffset: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    // Add score particle effect
+    function addScoreParticle(x, y, text) {
+      scoreParticles.push({
+        x: x,
+        y: y,
+        text: text,
+        alpha: 1,
+        vy: -2
+      });
+    }
+
+    // Jump
+    function jump() {
+      if (!gameStarted) {
+        gameStarted = true;
+        scoreDisplay.classList.add('visible');
+        gameStartScreen.classList.add('hidden');
+        gameHint.style.display = 'none';
+        init();
+      } else if (gameOver && canRestart) {
+        init();
+      } else if (!gameOver) {
+        jenny.velocity = jenny.jump;
+      }
+    }
+
+    // Event listeners
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        jump();
+      }
+    });
+
+    canvas.addEventListener('click', jump);
+
+    // Touch support for mobile
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      jump();
+    }, { passive: false });
+
+    // Create pipe (tree trunk style)
+    function createPipe() {
+      const minHeight = 80;
+      const maxHeight = canvas.height - pipeGap - minHeight - 60;
+      const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+
+      pipes.push({
+        x: canvas.width,
+        topHeight: topHeight,
+        passed: false
+      });
+
+      spawnBell(canvas.width, topHeight, pipeGap);
+    }
+
+    // Update game
+    function update() {
+      if (!gameStarted || gameOver) return;
+
+      // Decay screen shake
+      if (screenShake > 0) screenShake *= 0.9;
+
+      // Jenny physics
+      jenny.velocity += jenny.gravity;
+      jenny.y += jenny.velocity;
+
+      // Animation frame
+      jenny.frameTimer++;
+      if (jenny.frameTimer > 8) {
+        jenny.frame = (jenny.frame + 1) % 2;
+        jenny.frameTimer = 0;
+      }
+
+      // Spawn trail particle occasionally
+      if (Math.random() < 0.3) {
+        trailParticles.push({
+          x: jenny.x + 8,
+          y: jenny.y + jenny.height / 2 + (Math.random() - 0.5) * 10,
+          size: Math.random() * 4 + 2,
+          alpha: 0.8,
+          rotation: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.2
+        });
+      }
+
+      // Update trail particles
+      for (let i = trailParticles.length - 1; i >= 0; i--) {
+        trailParticles[i].x -= currentSpeed * 0.5;
+        trailParticles[i].y += 0.5;
+        trailParticles[i].alpha -= 0.03;
+        trailParticles[i].rotation += trailParticles[i].rotSpeed;
+        if (trailParticles[i].alpha <= 0) {
+          trailParticles.splice(i, 1);
+        }
+      }
+
+      // Pipe spawning
+      pipeTimer++;
+      if (pipeTimer >= pipeInterval) {
+        createPipe();
+        pipeTimer = 0;
+      }
+
+      // Update pipes
+      for (let i = pipes.length - 1; i >= 0; i--) {
+        pipes[i].x -= currentSpeed;
+
+        // Score
+        if (!pipes[i].passed && pipes[i].x + pipeWidth < jenny.x) {
+          pipes[i].passed = true;
+          score++;
+          scoreDisplay.textContent = score;
+          addScoreParticle(jenny.x + 20, jenny.y - 20, '+1');
+
+          // Gradually increase speed every 5 points (max 5.0)
+          if (score % 5 === 0 && currentSpeed < 5.0) {
+            currentSpeed += 0.15;
+          }
+        }
+
+        // Remove off-screen pipes
+        if (pipes[i].x + pipeWidth < gameAreaLeft - 100) {
+          pipes.splice(i, 1);
+          continue;
+        }
+
+        // Collision detection - only for pipes in game area
+        if (pipes[i].x > gameAreaLeft - pipeWidth) {
+          if (
+            jenny.x + jenny.width - 8 > pipes[i].x &&
+            jenny.x + 8 < pipes[i].x + pipeWidth
+          ) {
+            if (
+              jenny.y + 4 < pipes[i].topHeight ||
+              jenny.y + jenny.height - 4 > pipes[i].topHeight + pipeGap
+            ) {
+              endGame();
+            }
+          }
+        }
+      }
+
+      // Update bells
+      for (let i = bells.length - 1; i >= 0; i--) {
+        bells[i].x -= currentSpeed;
+
+        // Bell collection
+        if (!bells[i].collected) {
+          const dx = (jenny.x + jenny.width / 2) - bells[i].x;
+          const dy = (jenny.y + jenny.height / 2) - bells[i].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 25) {
+            bells[i].collected = true;
+            score += 3;
+            scoreDisplay.textContent = score;
+            addScoreParticle(bells[i].x, bells[i].y - 15, '+3 🔔');
+          }
+        }
+
+        // Remove off-screen bells
+        if (bells[i].x < gameAreaLeft - 50) {
+          bells.splice(i, 1);
+        }
+      }
+
+      // Update score particles
+      for (let i = scoreParticles.length - 1; i >= 0; i--) {
+        scoreParticles[i].y += scoreParticles[i].vy;
+        scoreParticles[i].alpha -= 0.02;
+        if (scoreParticles[i].alpha <= 0) {
+          scoreParticles.splice(i, 1);
+        }
+      }
+
+      // Ground/ceiling collision
+      const groundY = canvas.height - 50;
+      if (jenny.y + jenny.height > groundY || jenny.y < 0) {
+        endGame();
+      }
+    }
+
+    // End game
+    let canRestart = false;
+
+    function endGame() {
+      gameOver = true;
+      canRestart = false;
+      screenShake = 15;
+
+      finalScoreDisplay.textContent = score;
+
+      // Check for new high score
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('flappyJennyHighScore', highScore);
+        highScoreDisplay.textContent = highScore;
+        highScoreContainer.classList.add('new-record');
+        highScoreContainer.innerHTML = '🎉 NEW BEST: <span id="high-score">' + highScore + '</span> 🎉';
+      } else {
+        highScoreDisplay.textContent = highScore;
+      }
+
+      gameOverScreen.style.display = 'block';
+
+      // Delay before allowing restart
+      setTimeout(() => {
+        canRestart = true;
+      }, 1000);
+    }
+
+    // Draw pixelated Jenny
+    function drawJenny(x, y, flap = false) {
+      ctx.imageSmoothingEnabled = false;
+      const px = 2;
+
+      // Hair (dark brown, long)
+      ctx.fillStyle = colors.hair;
+      ctx.fillRect(x + 4*px, y - 2*px, 10*px, 22*px);
+      ctx.fillRect(x + 2*px, y - 4*px, 12*px, 6*px);
+      ctx.fillRect(x + 4*px, y - 6*px, 8*px, 3*px);
+
+      // Face
+      ctx.fillStyle = colors.skin;
+      ctx.fillRect(x + 5*px, y + 2*px, 8*px, 8*px);
+
+      // Blush
+      ctx.fillStyle = '#FFB5B5';
+      ctx.fillRect(x + 4*px, y + 6*px, 2*px, 2*px);
+      ctx.fillRect(x + 12*px, y + 6*px, 2*px, 2*px);
+
+      // Eyes
+      ctx.fillStyle = '#3D2914';
+      ctx.fillRect(x + 6*px, y + 4*px, 2*px, 2*px);
+      ctx.fillRect(x + 10*px, y + 4*px, 2*px, 2*px);
+
+      // Smile
+      ctx.fillRect(x + 8*px, y + 7*px, 2*px, px);
+
+      // Red top
+      ctx.fillStyle = colors.shirt;
+      ctx.fillRect(x + 4*px, y + 10*px, 10*px, 6*px);
+
+      // Arms
+      ctx.fillStyle = colors.skin;
+      if (flap) {
+        ctx.fillRect(x + 2*px, y + 8*px, 2*px, 4*px);
+        ctx.fillRect(x + 14*px, y + 8*px, 2*px, 4*px);
+      } else {
+        ctx.fillRect(x + 2*px, y + 11*px, 2*px, 4*px);
+        ctx.fillRect(x + 14*px, y + 11*px, 2*px, 4*px);
+      }
+
+      // Skirt
+      ctx.fillStyle = colors.skirt;
+      ctx.fillRect(x + 3*px, y + 16*px, 12*px, 4*px);
+
+      // Legs
+      ctx.fillStyle = colors.skin;
+      ctx.fillRect(x + 5*px, y + 20*px, 3*px, 4*px);
+      ctx.fillRect(x + 10*px, y + 20*px, 3*px, 4*px);
+
+      // Shoes
+      ctx.fillStyle = '#F5F5DC';
+      ctx.fillRect(x + 4*px, y + 24*px, 4*px, 2*px);
+      ctx.fillRect(x + 10*px, y + 24*px, 4*px, 2*px);
+    }
+
+    // Draw tree pipe
+    function drawPipe(pipe) {
+      // Only draw pipes in game area
+      if (pipe.x + pipeWidth < gameAreaLeft - 50) return;
+
+      // Top tree
+      const topY = pipe.topHeight;
+
+      ctx.fillStyle = colors.tree;
+      ctx.fillRect(pipe.x + 10, 0, pipeWidth - 20, topY - 20);
+
+      ctx.fillStyle = colors.treeDark;
+      ctx.fillRect(pipe.x + 15, 0, 8, topY - 20);
+      ctx.fillRect(pipe.x + pipeWidth - 25, 0, 5, topY - 20);
+
+      ctx.fillStyle = colors.leaves;
+      ctx.beginPath();
+      ctx.ellipse(pipe.x + pipeWidth/2, topY - 15, 45, 30, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = colors.leavesDark;
+      ctx.beginPath();
+      ctx.ellipse(pipe.x + pipeWidth/2 - 15, topY - 10, 20, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(pipe.x + pipeWidth/2 + 15, topY - 8, 18, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Bottom tree
+      const bottomY = topY + pipeGap;
+      const groundY = canvas.height - 50;
+
+      ctx.fillStyle = colors.tree;
+      ctx.fillRect(pipe.x + 10, bottomY + 25, pipeWidth - 20, groundY - bottomY - 25);
+
+      ctx.fillStyle = colors.treeDark;
+      ctx.fillRect(pipe.x + 15, bottomY + 25, 8, groundY - bottomY - 25);
+      ctx.fillRect(pipe.x + pipeWidth - 25, bottomY + 25, 5, groundY - bottomY - 25);
+
+      ctx.fillStyle = colors.leaves;
+      ctx.beginPath();
+      ctx.ellipse(pipe.x + pipeWidth/2, bottomY + 20, 45, 30, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = colors.leavesDark;
+      ctx.beginPath();
+      ctx.ellipse(pipe.x + pipeWidth/2 - 12, bottomY + 25, 22, 20, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(pipe.x + pipeWidth/2 + 18, bottomY + 22, 16, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Draw background
+    function drawBackground() {
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, colors.skyLight);
+      gradient.addColorStop(0.5, colors.sky);
+      gradient.addColorStop(1, colors.grass);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Clouds
+      clouds.forEach(cloud => {
+        cloud.x -= cloud.speed;
+        if (cloud.x + cloud.size < 0) {
+          cloud.x = canvas.width + cloud.size;
+          cloud.y = Math.random() * (canvas.height * 0.35) + 30;
+        }
+
+        ctx.fillStyle = colors.clouds;
+        ctx.beginPath();
+        ctx.ellipse(cloud.x, cloud.y, cloud.size, cloud.size * 0.6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cloud.x - cloud.size * 0.5, cloud.y + 5, cloud.size * 0.7, cloud.size * 0.45, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cloud.x + cloud.size * 0.5, cloud.y + 3, cloud.size * 0.65, cloud.size * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Ground
+      const groundY = canvas.height - 50;
+      ctx.fillStyle = colors.grass;
+      ctx.fillRect(0, groundY, canvas.width, 50);
+
+      // Grass tufts
+      ctx.fillStyle = colors.grassDark;
+      for (let i = 0; i < canvas.width; i += 30) {
+        ctx.beginPath();
+        ctx.moveTo(i, groundY);
+        ctx.lineTo(i + 5, groundY - 8);
+        ctx.lineTo(i + 10, groundY);
+        ctx.fill();
+      }
+
+      // Flowers
+      const time = Date.now() / 1000;
+      flowers.forEach(flower => {
+        const swayOffset = Math.sin(time + flower.sway) * 2;
+        ctx.fillStyle = flower.color;
+        ctx.beginPath();
+        ctx.arc(flower.x + swayOffset, flower.y, flower.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#FFE066';
+        ctx.beginPath();
+        ctx.arc(flower.x + swayOffset, flower.y, flower.size * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Butterflies
+      butterflies.forEach(b => {
+        b.wobble += 0.05;
+        b.x += b.dx + Math.sin(b.wobble) * 0.5;
+        b.y += b.dy + Math.cos(b.wobble * 0.7) * 0.3;
+        b.wingPhase += 0.3;
+
+        if (b.x > canvas.width + 20) b.x = -20;
+        if (b.x < -20) b.x = canvas.width + 20;
+        if (b.y > canvas.height * 0.7) b.dy = -Math.abs(b.dy);
+        if (b.y < 50) b.dy = Math.abs(b.dy);
+
+        const wingFlap = Math.sin(b.wingPhase) * 0.5 + 0.5;
+
+        ctx.fillStyle = b.color;
+        ctx.beginPath();
+        ctx.ellipse(b.x - b.size * 0.8, b.y, b.size * wingFlap, b.size * 0.7, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(b.x + b.size * 0.8, b.y, b.size * wingFlap, b.size * 0.7, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#5D4E37';
+        ctx.beginPath();
+        ctx.ellipse(b.x, b.y, b.size * 0.2, b.size * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    // Draw idle Jenny (before game starts)
+    function drawIdleJenny() {
+      const idleY = canvas.height / 2 + Math.sin(Date.now() / 400) * 15;
+      const flap = Math.sin(Date.now() / 200) > 0;
+      drawJenny(jenny.x, idleY, flap);
+    }
+
+    // Draw bell
+    function drawBell(bell) {
+      if (bell.collected) return;
+      if (bell.x < gameAreaLeft - 30) return;
+
+      const bob = Math.sin(Date.now() / 300 + bell.bobOffset) * 3;
+      const x = bell.x;
+      const y = bell.y + bob;
+
+      ctx.shadowColor = '#FFD700';
+      ctx.shadowBlur = 15;
+
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.ellipse(x, y, bell.size, bell.size * 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#FFF8DC';
+      ctx.beginPath();
+      ctx.ellipse(x - 3, y - 3, bell.size * 0.3, bell.size * 0.25, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#DAA520';
+      ctx.beginPath();
+      ctx.arc(x, y + bell.size * 0.6, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+    }
+
+    // Draw score particles
+    function drawScoreParticles() {
+      scoreParticles.forEach(p => {
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = '#5D4E37';
+        ctx.font = 'bold 18px Nunito';
+        ctx.textAlign = 'center';
+        ctx.fillText(p.text, p.x, p.y);
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    // Draw trail particles
+    function drawTrailParticles() {
+      trailParticles.forEach(p => {
+        if (p.x < gameAreaLeft - 20) return;
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.fillStyle = colors.leaves;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.size, p.size * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = colors.leavesDark;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(-p.size * 0.8, 0);
+        ctx.lineTo(p.size * 0.8, 0);
+        ctx.stroke();
+        ctx.restore();
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    // Game loop
+    function gameLoop() {
+      ctx.save();
+
+      if (screenShake > 0.5) {
+        ctx.translate(
+          (Math.random() - 0.5) * screenShake,
+          (Math.random() - 0.5) * screenShake
+        );
+      }
+
+      drawBackground();
+
+      if (!gameStarted) {
+        drawIdleJenny();
+      } else {
+        update();
+        pipes.forEach(drawPipe);
+        bells.forEach(drawBell);
+        drawTrailParticles();
+        const flap = jenny.velocity < 0;
+        drawJenny(jenny.x, jenny.y, flap);
+        drawScoreParticles();
+      }
+
+      ctx.restore();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Handle window resize for game area
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      gameAreaLeft = Math.max(canvas.width * 0.35, 300);
+      jenny.x = Math.max(canvas.width * 0.55, 400);
+    });
+
+    // Start
+    init();
+    gameLoop();
+
+    // ============================================
+    // SCROLL REVEAL
+    // ============================================
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+          behavior: 'smooth'
+        });
+      });
+    });
+  </script>
+</body>
+</html>
