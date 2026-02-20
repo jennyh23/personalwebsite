@@ -43,26 +43,11 @@
     body {
       font-family: 'Nunito', sans-serif;
       background: linear-gradient(180deg,
-        #B8E0D2 0%, #B8E0D2 5%,
-        #BBE1D0 5%, #BBE1D0 10%,
-        #BEE2CF 10%, #BEE2CF 15%,
-        #C1E4CD 15%, #C1E4CD 20%,
-        #C4E5CB 20%, #C4E5CB 25%,
-        #C6E6CA 25%, #C6E6CA 30%,
-        #C9E7C8 30%, #C9E7C8 35%,
-        #CCE8C7 35%, #CCE8C7 40%,
-        #CFEAC5 40%, #CFEAC5 45%,
-        #D2EBC4 45%, #D2EBC4 50%,
-        #D5ECC2 50%, #D5ECC2 55%,
-        #D9EDC5 55%, #D9EDC5 60%,
-        #DCEDC8 60%, #DCEDC8 65%,
-        #E0EECB 65%, #E0EECB 70%,
-        #E4EFCE 70%, #E4EFCE 75%,
-        #E8F0D1 75%, #E8F0D1 80%,
-        #EBF0D4 80%, #EBF0D4 85%,
-        #EFF1D7 85%, #EFF1D7 90%,
-        #F2F2DA 90%, #F2F2DA 95%,
-        #F6F3DD 95%, #F6F3DD 100%
+        #B8E0D2 0%, #B8E0D2 20%,
+        #C7E6CA 20%, #C7E6CA 40%,
+        #D5ECC2 40%, #D5ECC2 60%,
+        #E8F0D1 60%, #E8F0D1 80%,
+        #FAF3E0 80%, #FAF3E0 100%
       );
       color: var(--text-primary);
       overflow-x: hidden;
@@ -564,7 +549,12 @@
     }
 
     section#projects, section#roadmap, section#about, section#contact {
-      background: linear-gradient(180deg, var(--bg-grass) 0%, var(--bg-cream) 100%);
+      background: linear-gradient(180deg,
+        #D5ECC2 0%, #D5ECC2 25%,
+        #E0EECB 25%, #E0EECB 50%,
+        #EBF0D4 50%, #EBF0D4 75%,
+        #FAF3E0 75%, #FAF3E0 100%
+      );
     }
 
     .section-header {
@@ -588,10 +578,54 @@
     }
 
     /* Cards */
+    .card-scroll-wrapper {
+      position: relative;
+    }
+
+    .card-scroll-wrapper::before,
+    .card-scroll-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 60px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .card-scroll-wrapper::before {
+      left: 0;
+      background: linear-gradient(to right, #D5ECC2, transparent);
+    }
+
+    .card-scroll-wrapper::after {
+      right: 0;
+      background: linear-gradient(to left, #D5ECC2, transparent);
+    }
+
     .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      display: flex;
       gap: 1.5rem;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding: 1rem 2rem 2rem;
+      scrollbar-width: none;
+    }
+
+    .card-grid.auto-scrolling {
+      scroll-snap-type: none;
+    }
+
+    .card-grid::-webkit-scrollbar {
+      display: none;
+    }
+
+    .card-grid > .card-3d {
+      min-width: 340px;
+      max-width: 380px;
+      flex-shrink: 0;
+      scroll-snap-align: start;
     }
 
     .card-3d {
@@ -892,8 +926,8 @@
         padding: 0;
       }
 
-      .card-grid {
-        grid-template-columns: 1fr;
+      .card-grid > .card-3d {
+        min-width: 280px;
       }
 
       .about-grid {
@@ -962,7 +996,7 @@
           <div class="start-title">Flappy Jenny</div>
           <div class="start-subtitle">Collect Jenny's achievements</div>
           <div class="start-prompt pixel-btn">SPACE or TAP to play</div>
-          <div class="start-tips">Collect bells for +3 pts</div>
+          <div class="start-tips">Collect avocados for +3 pts</div>
         </div>
       </div>
 
@@ -1027,13 +1061,58 @@
       </div><!-- END hero-content -->
     </section>
 
+    <section id="about">
+      <div class="about-grid">
+        <div class="about-image reveal">
+          <img src="./jenny-photo.jpg" alt="Jenny Huynh">
+        </div>
+        <div class="about-content reveal">
+          <p class="section-label">// About Me</p>
+          <h2>Nice to meet you</h2>
+          <p>
+            I'm a Stanford student studying <span class="highlight">Symbolic Systems</span> with a concentration in HCI, passionate about building thoughtful products at the intersection of creativity, technology, and storytelling. I hope to grow deeper in product strategy and development, especially in spaces where content, community, and creativity meet—like film, digital creation, and emerging media.
+          </p>
+          <p>
+            I was born and raised in <span class="highlight">Ho Chi Minh City, Vietnam</span>, and moved to the U.S. at 15. I started experimenting with content when I was 9 (posting my first YouTube video long before I knew it counted), and officially began my social media journey at 12. Since then, storytelling—whether through video, design, or product—has been my passion!
+          </p>
+          <p>
+            Outside of school, I love working on creative side projects. I've built design-driven small businesses like <span class="highlight">Jenny Slimey</span> (a slime shop I launched at 12) and <span class="highlight">Whoop</span> (a clothing brand where I hand-illustrated each graphic). When I'm not working on product or creative projects, you'll find me hanging out with my bunny <span class="highlight">Bambi</span>, rewatching Disney movies, or planning another Disneyland trip
+          </p>
+          <div class="skills-list">
+            <span class="skill-tag">Product Strategy</span>
+            <span class="skill-tag">Video Production</span>
+            <span class="skill-tag">Storytelling</span>
+            <span class="skill-tag">HCI</span>
+            <span class="skill-tag">Content Strategy</span>
+            <span class="skill-tag">Visual Branding</span>
+            <span class="skill-tag">React Native</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="projects">
       <div class="section-header reveal">
         <p class="section-label">// What I've Built</p>
         <h2 class="section-title">Projects</h2>
       </div>
 
+      <div class="card-scroll-wrapper">
       <div class="card-grid">
+        <div class="card-3d reveal">
+          <div class="icon">🪞</div>
+          <h3>Mira Mira</h3>
+          <p>MIRA is an AI-powered smart mirror that analyzes your past purchases, emails, and calendar to virtually style you in real time and recommend outfits tailored to your life.</p>
+          <div class="card-tags">
+            <span class="card-tag">Hardware</span>
+            <span class="card-tag">TreeHacks $10K Award</span>
+          </div>
+          <div class="card-actions">
+            <a href="https://devpost.com/software/mira-3xqlos" class="btn btn-primary" target="_blank">See more</a>
+            <a href="https://youtube.com/watch?si=LKwmxnjzQ5YyrRWk&embeds_referring_euri=https%3A%2F%2Fdevpost.com%2F&source_ve_path=Mjg2NjQsMTY0NTA2&v=ki_rh4TUoOQ&feature=youtu.be" class="btn btn-secondary" target="_blank">Demo</a>
+          </div>
+        </div>
+
         <div class="card-3d reveal">
           <div class="icon">👨‍🍳</div>
           <h3>Cooking Papa</h3>
@@ -1069,13 +1148,14 @@
           <div class="card-tags">
             <span class="card-tag">C++</span>
             <span class="card-tag">Unity</span>
-            <span class="card-tag">TreeHacks Award</span>
+            <span class="card-tag">TreeHacks $3K Award</span>
           </div>
           <div class="card-actions">
             <a href="https://devpost.com/software/vr-tines" class="btn btn-primary" target="_blank">See more</a>
             <a href="https://www.youtube.com/watch?v=zOW5E1oHc_g" class="btn btn-secondary" target="_blank">Demo</a>
           </div>
         </div>
+      </div>
       </div>
     </section>
 
@@ -1116,36 +1196,6 @@
             <span>Have a cumulative following of 15 million across 5 social media platforms. Interned on product team at TikTok & Pika Labs.</span>
           </li>
         </ul>
-      </div>
-    </section>
-
-    <section id="about">
-      <div class="about-grid">
-        <div class="about-image reveal">
-          <img src="./jenny-photo.jpg" alt="Jenny Huynh">
-        </div>
-        <div class="about-content reveal">
-          <p class="section-label">// About Me</p>
-          <h2>Nice to meet you</h2>
-          <p>
-            I'm a Stanford student studying <span class="highlight">Symbolic Systems</span> with a concentration in HCI, passionate about building thoughtful products at the intersection of creativity, technology, and storytelling. I hope to grow deeper in product strategy and development, especially in spaces where content, community, and creativity meet—like film, digital creation, and emerging media.
-          </p>
-          <p>
-            I was born and raised in <span class="highlight">Ho Chi Minh City, Vietnam</span>, and moved to the U.S. at 15. I started experimenting with content when I was 9 (posting my first YouTube video long before I knew it counted), and officially began my social media journey at 12. Since then, storytelling—whether through video, design, or product—has been my passion!
-          </p>
-          <p>
-            Outside of school, I love working on creative side projects. I've built design-driven small businesses like <span class="highlight">Jenny Slimey</span> (a slime shop I launched at 12) and <span class="highlight">Whoop</span> (a clothing brand where I hand-illustrated each graphic). When I'm not working on product or creative projects, you'll find me hanging out with my bunny <span class="highlight">Bambi</span>, rewatching Disney movies, or planning another Disneyland trip
-          </p>
-          <div class="skills-list">
-            <span class="skill-tag">Product Strategy</span>
-            <span class="skill-tag">Video Production</span>
-            <span class="skill-tag">Storytelling</span>
-            <span class="skill-tag">HCI</span>
-            <span class="skill-tag">Content Strategy</span>
-            <span class="skill-tag">Visual Branding</span>
-            <span class="skill-tag">React Native</span>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -1206,6 +1256,20 @@
 
     // Score particles
     let scoreParticles = [];
+
+    // Achievement easter eggs (shown on avocado collect)
+    const achievements = [
+      '500K+ followers — Jenny Slimy',
+      '20K+ total sales',
+      '1M followers milestone',
+      '1B+ total views',
+      '100K+ Whoop followers',
+      'Stanford (BS HCI)',
+      'Forbes 30U30 Asia',
+      '15M+ total followers',
+      'TikTok product intern',
+      'Pika Labs intern'
+    ];
 
     // Screen shake
     let screenShake = 0;
@@ -1346,13 +1410,15 @@
     }
 
     // Add score particle effect
-    function addScoreParticle(x, y, text) {
+    function addScoreParticle(x, y, text, isAchievement) {
       scoreParticles.push({
         x: x,
         y: y,
         text: text,
         alpha: 1,
-        vy: -2
+        vy: isAchievement ? -0.8 : -2,
+        decay: isAchievement ? 0.012 : 0.02,
+        isAchievement: !!isAchievement
       });
     }
 
@@ -1504,7 +1570,8 @@
             bells[i].collected = true;
             score += 3;
             scoreDisplay.textContent = score;
-            addScoreParticle(bells[i].x, bells[i].y - 15, '+3');
+            const ach = achievements[Math.floor(Math.random() * achievements.length)];
+            addScoreParticle(bells[i].x, bells[i].y - 15, ach, true);
           }
         }
 
@@ -1517,7 +1584,7 @@
       // Update score particles
       for (let i = scoreParticles.length - 1; i >= 0; i--) {
         scoreParticles[i].y += scoreParticles[i].vy;
-        scoreParticles[i].alpha -= 0.02;
+        scoreParticles[i].alpha -= scoreParticles[i].decay;
         if (scoreParticles[i].alpha <= 0) {
           scoreParticles.splice(i, 1);
         }
@@ -1837,42 +1904,61 @@
       drawJenny(jenny.x, idleY, flap);
     }
 
-    // Draw bell
+    // Draw pixelated avocado
     function drawBell(bell) {
       if (bell.collected) return;
       if (bell.x < gameAreaLeft - 30) return;
 
       const bob = Math.sin(Date.now() / 300 + bell.bobOffset) * 3;
-      const x = bell.x;
-      const y = bell.y + bob;
+      const px = 4;
+      const cx = Math.round(bell.x - 4 * px);
+      const cy = Math.round(bell.y + bob - 5 * px);
 
-      ctx.shadowColor = '#FFD700';
-      ctx.shadowBlur = 15;
+      // Dark green skin outline
+      ctx.fillStyle = '#2D5016';
+      ctx.fillRect(cx + 3*px, cy, 2*px, px);
+      ctx.fillRect(cx + 2*px, cy + px, px, px);
+      ctx.fillRect(cx + 5*px, cy + px, px, px);
+      ctx.fillRect(cx + px, cy + 2*px, px, 2*px);
+      ctx.fillRect(cx + 6*px, cy + 2*px, px, 2*px);
+      ctx.fillRect(cx, cy + 4*px, px, 3*px);
+      ctx.fillRect(cx + 7*px, cy + 4*px, px, 3*px);
+      ctx.fillRect(cx + px, cy + 7*px, px, px);
+      ctx.fillRect(cx + 6*px, cy + 7*px, px, px);
+      ctx.fillRect(cx + 2*px, cy + 8*px, px, px);
+      ctx.fillRect(cx + 5*px, cy + 8*px, px, px);
+      ctx.fillRect(cx + 3*px, cy + 9*px, 2*px, px);
 
-      ctx.fillStyle = '#FFD700';
-      ctx.beginPath();
-      ctx.ellipse(x, y, bell.size, bell.size * 0.8, 0, 0, Math.PI * 2);
-      ctx.fill();
+      // Green flesh fill
+      ctx.fillStyle = '#7CB342';
+      ctx.fillRect(cx + 3*px, cy + px, 2*px, px);
+      ctx.fillRect(cx + 2*px, cy + 2*px, 4*px, 2*px);
+      ctx.fillRect(cx + px, cy + 4*px, 6*px, 3*px);
+      ctx.fillRect(cx + 2*px, cy + 7*px, 4*px, px);
+      ctx.fillRect(cx + 3*px, cy + 8*px, 2*px, px);
 
-      ctx.fillStyle = '#FFF8DC';
-      ctx.beginPath();
-      ctx.ellipse(x - 3, y - 3, bell.size * 0.3, bell.size * 0.25, 0, 0, Math.PI * 2);
-      ctx.fill();
+      // Pit (brown circle)
+      ctx.fillStyle = '#795548';
+      ctx.fillRect(cx + 3*px, cy + 4*px, 2*px, px);
+      ctx.fillRect(cx + 2*px, cy + 5*px, 4*px, px);
+      ctx.fillRect(cx + 3*px, cy + 6*px, 2*px, px);
 
-      ctx.fillStyle = '#DAA520';
-      ctx.beginPath();
-      ctx.arc(x, y + bell.size * 0.6, 3, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.shadowBlur = 0;
+      // Pit highlight
+      ctx.fillStyle = '#A1887F';
+      ctx.fillRect(cx + 3*px, cy + 4*px, px, px);
     }
 
     // Draw score particles
     function drawScoreParticles() {
       scoreParticles.forEach(p => {
         ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = '#5D4E37';
-        ctx.font = 'bold 18px Nunito';
+        if (p.isAchievement) {
+          ctx.fillStyle = '#52A375';
+          ctx.font = '8px "Press Start 2P"';
+        } else {
+          ctx.fillStyle = '#5D4E37';
+          ctx.font = 'bold 18px Nunito';
+        }
         ctx.textAlign = 'center';
         ctx.fillText(p.text, p.x, p.y);
       });
@@ -1955,6 +2041,46 @@
     }, { threshold: 0.1 });
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Auto-scroll projects carousel
+    (function() {
+      const grid = document.querySelector('.card-grid');
+      if (!grid) return;
+      let speed = 0.5;
+      let paused = false;
+      let rafId;
+
+      function autoScroll() {
+        if (!paused) {
+          grid.scrollLeft += speed;
+          // Loop back when reaching the end
+          if (grid.scrollLeft >= grid.scrollWidth - grid.clientWidth - 1) {
+            grid.scrollLeft = 0;
+          }
+        }
+        rafId = requestAnimationFrame(autoScroll);
+      }
+
+      // Pause on hover/touch, re-enable snap
+      grid.addEventListener('mouseenter', () => { paused = true; grid.classList.remove('auto-scrolling'); });
+      grid.addEventListener('mouseleave', () => { paused = false; grid.classList.add('auto-scrolling'); });
+      grid.addEventListener('touchstart', () => { paused = true; grid.classList.remove('auto-scrolling'); }, { passive: true });
+      grid.addEventListener('touchend', () => {
+        setTimeout(() => { paused = false; grid.classList.add('auto-scrolling'); }, 2000);
+      });
+
+      // Start when section is visible
+      const scrollObs = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            grid.classList.add('auto-scrolling');
+            autoScroll();
+            scrollObs.disconnect();
+          }
+        });
+      }, { threshold: 0.2 });
+      scrollObs.observe(grid);
+    })();
 
     // Smooth scroll
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
