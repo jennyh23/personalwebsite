@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jenny's World — Interactive Resume</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2395D5B2'/%3E%3Ctext x='50' y='68' font-size='56' text-anchor='middle' fill='%235D4E37' font-family='monospace'%3EJH%3C/text%3E%3C/svg%3E" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background: #1a2a1a; font-family: 'Press Start 2P', cursive; }
+    canvas { display: block; image-rendering: pixelated; }
+
+    #splash {
+      position: fixed; inset: 0; z-index: 200;
+      background: #1a2a1a;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      transition: opacity 1s ease;
+    }
+    #splash.fade { opacity: 0; pointer-events: none; }
+    #splash h1 {
+      font-size: clamp(18px, 4vw, 36px); color: #FAF3E0;
+      margin-bottom: 6px; text-shadow: 3px 3px 0 #52A375;
+    }
+    #splash h2 {
+      font-size: clamp(8px, 1.8vw, 14px); color: #7BC9A0;
+      margin-bottom: 50px; font-weight: normal;
+    }
+    #splash .start {
+      font-size: clamp(8px, 1.5vw, 11px); color: #9B8B7A;
+      animation: blink 1.2s steps(2) infinite;
+    }
+    #splash .controls {
+      margin-top: 40px; font-size: clamp(7px, 1.2vw, 9px);
+      color: #5D4E37; line-height: 2.5; text-align: center;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    #dialogue {
+      display: none; position: fixed;
+      bottom: 30px; left: 50%; transform: translateX(-50%);
+      width: min(640px, 92vw); z-index: 100;
+      background: #52A375;
+      clip-path: polygon(
+        0px 8px, 4px 8px, 4px 4px, 8px 4px, 8px 0px,
+        calc(100% - 8px) 0px, calc(100% - 8px) 4px, calc(100% - 4px) 4px, calc(100% - 4px) 8px, 100% 8px,
+        100% calc(100% - 8px), calc(100% - 4px) calc(100% - 8px), calc(100% - 4px) calc(100% - 4px), calc(100% - 8px) calc(100% - 4px), calc(100% - 8px) 100%,
+        8px 100%, 8px calc(100% - 4px), 4px calc(100% - 4px), 4px calc(100% - 8px), 0px calc(100% - 8px)
+      );
+    }
+    #dialogue .inner {
+      margin: 4px; padding: 20px 24px;
+      background: #FAF3E0;
+      clip-path: polygon(
+        0px 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0px,
+        calc(100% - 6px) 0px, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px,
+        100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%,
+        6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0px calc(100% - 6px)
+      );
+    }
+    #dlg-title {
+      font-size: clamp(9px, 1.5vw, 12px); color: #52A375;
+      margin-bottom: 12px;
+    }
+    #dlg-content {
+      font-size: clamp(8px, 1.3vw, 11px); color: #5D4E37;
+      line-height: 2.2; min-height: 60px; white-space: pre-wrap;
+    }
+    #dlg-footer {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-top: 14px;
+    }
+    #dlg-page {
+      font-size: 8px; color: #9B8B7A;
+    }
+    #dlg-prompt {
+      font-size: 9px; color: #9B8B7A;
+      animation: blink 1s steps(2) infinite;
+    }
+
+    #back-link {
+      position: fixed; top: 14px; left: 14px; z-index: 150;
+      font-size: 9px; color: #FAF3E0;
+      background: rgba(42, 63, 42, 0.8); padding: 8px 14px;
+      text-decoration: none; border: 2px solid #52A375;
+      transition: background 0.2s;
+    }
+    #back-link:hover { background: rgba(42, 63, 42, 1); }
+
+    #hint {
+      position: fixed; bottom: 14px; left: 14px; z-index: 90;
+      font-size: 8px; color: rgba(250,243,224,0.5);
+      line-height: 2;
+    }
+
+    #touch-controls {
+      display: none; position: fixed; z-index: 150;
+    }
+    @media (pointer: coarse) {
+      #touch-controls { display: block; }
+      #hint { display: none; }
+    }
+    .dpad {
+      position: fixed; bottom: 20px; left: 20px;
+      width: 120px; height: 120px;
+    }
+    .dpad button {
+      position: absolute; width: 40px; height: 40px;
+      background: rgba(42,63,42,0.6); border: 2px solid #52A375;
+      color: #FAF3E0; font-size: 16px; font-family: inherit;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: none;
+    }
+    .dpad .up { top: 0; left: 40px; }
+    .dpad .down { bottom: 0; left: 40px; }
+    .dpad .left { top: 40px; left: 0; }
+    .dpad .right { top: 40px; right: 0; }
+    .action-btn {
+      position: fixed; bottom: 30px; right: 30px;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: rgba(82,163,117,0.7); border: 3px solid #FAF3E0;
+      color: #FAF3E0; font-size: 18px; font-family: inherit;
+      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="world"></canvas>
+
+  <div id="splash" tabindex="0">
+    <h1>Jenny's World</h1>
+    <h2>Interactive Resume</h2>
+    <div class="start">Click or press SPACE to start</div>
+    <div class="controls">
+      Arrow keys to move<br>
+      SPACE to interact
+    </div>
+  </div>
+
+  <div id="dialogue">
+    <div class="inner">
+      <div id="dlg-title"></div>
+      <div id="dlg-content"></div>
+      <div id="dlg-footer">
+        <span id="dlg-page"></span>
+        <span id="dlg-prompt">SPACE ▼</span>
+      </div>
+    </div>
+  </div>
+
+  <a id="back-link" href="index.html">&#x2190; Portfolio</a>
+
+  <div id="hint">
+    Arrow keys: move<br>
+    Space: interact
+  </div>
+
+  <div id="touch-controls">
+    <div class="dpad">
+      <button class="up" data-dir="up">&#x25B2;</button>
+      <button class="down" data-dir="down">&#x25BC;</button>
+      <button class="left" data-dir="left">&#x25C0;</button>
+      <button class="right" data-dir="right">&#x25B6;</button>
+    </div>
+    <button class="action-btn" id="touch-action">A</button>
+  </div>
+
+<script>
+// ═══════════════════════════════════════
+// SETUP
+// ═══════════════════════════════════════
+const canvas = document.getElementById('world');
+const ctx = canvas.getContext('2d');
+const S = 3;
+const TILE = 16;
+const MW = 52, MH = 38;
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  if (groundCache) renderGroundCache();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ═══════════════════════════════════════
+// COLORS
+// ═══════════════════════════════════════
+const COL = {
+  grass1: '#7BC9A0',
+  grass2: '#6EC08F',
+  grassDark: '#5DAF7E',
+  path: '#F5E6C8',
+  pathEdge: '#E0D0A8',
+  pathDark: '#D8C898',
+  water: '#82C8EE',
+  waterLight: '#A2D8FF',
+  waterDark: '#5EAAD0',
+  waterEdge: '#B8E0D2',
+  sand: '#F0DCA0',
+  treeTrunk: '#8B6B4A',
+  treeTrunkDark: '#705838',
+  canopy: '#52A375',
+  canopyLight: '#6BBE8E',
+  canopyDark: '#3D8A5E',
+  hair: '#2D1B0E',
+  skin: '#FFDAB9',
+  skinShadow: '#F0C098',
+  eyes: '#2D1B0E',
+  eyeWhite: '#FFFFFF',
+  blush: '#FFB4A2',
+  shirt: '#52A375',
+  shirtDark: '#3D8A5E',
+  skirt: '#E8D5B0',
+  shoes: '#8B6B4A',
+  wallCream: '#FAF3E0',
+  wallShadow: '#E8DCC8',
+  wallWhite: '#FFF8F0',
+  doorBrown: '#8B6B4A',
+  doorDark: '#705838',
+  windowBlue: '#A2D2FF',
+  windowFrame: '#E8DCC8',
+  roofRed: '#C97B63',
+  roofRedDark: '#A86850',
+  roofBlue: '#7B9EC9',
+  roofBlueDark: '#5E80A8',
+  roofPink: '#E5A0B8',
+  roofPinkDark: '#CC8AA0',
+  roofGold: '#D4B86A',
+  roofGoldDark: '#B89E55',
+  roofLavender: '#B899CC',
+  roofLavDark: '#9A80B0',
+  roofMint: '#6BBE8E',
+  roofMintDark: '#52A375',
+  shadow: 'rgba(0,0,0,0.08)',
+  textDark: '#5D4E37',
+  fenceBrown: '#A08060',
+  flowerPink: '#FFB4A2',
+  flowerYellow: '#FFF3B0',
+  flowerPurple: '#E5C1CD',
+  flowerWhite: '#FFF8F0',
+  flowerCenter: '#FFE082',
+};
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+const keys = {};
+let started = false;
+let time = 0;
+let dlgActive = false;
+let dlgBuilding = null;
+let dlgPage = 0;
+let dlgCharIdx = 0;
+let nearBuilding = null;
+
+const player = {
+  x: 25 * TILE + 8,
+  y: 20 * TILE + 8,
+  w: 10, h: 14,
+  dir: 'down',
+  frame: 0,
+  frameTimer: 0,
+  speed: 1.6,
+  moving: false,
+};
+
+const cam = { x: 0, y: 0 };
+
+// ═══════════════════════════════════════
+// BUILDINGS
+// ═══════════════════════════════════════
+const buildings = [
+  {
+    id: 'education', name: 'University',
+    x: 7, y: 5, w: 9, h: 7,
+    roof: COL.roofRed, roofDk: COL.roofRedDark,
+    wall: COL.wallCream, wallDk: COL.wallShadow,
+    sign: 'STANFORD', signColor: COL.roofRed,
+    pages: [
+      { title: '\u{1F393} Stanford University', text: 'BS Symbolic Systems\nHCI Concentration' },
+      { title: '\u{1F393} Affiliations', text: 'Forbes Under 30\nStanford ASES\nWiCS\nNEXT Creator Collective\nBOSP: Peking University' },
+    ],
+  },
+  {
+    id: 'experience', name: 'Offices',
+    x: 34, y: 4, w: 11, h: 8,
+    roof: COL.roofBlue, roofDk: COL.roofBlueDark,
+    wall: COL.wallWhite, wallDk: COL.wallShadow,
+    sign: 'EXPERIENCE', signColor: COL.roofBlue,
+    pages: [
+      { title: '\u{1F3E2} Pika \u2014 PM Intern', text: 'Palo Alto, CA\n\nLed cross-functional product\ndesign and go-to-market for\nan AI video platform.\n\nImproved publishing workflow\nand user satisfaction.\n\nBuilt and scaled a creator\nonboarding program.' },
+      { title: '\u{1F3E2} TikTok \u2014 Product Ops', text: 'San Jose, CA\n\nImproved creator vetting systems.\n\nPartnered with engineers to\nenhance dashboard UX.\n\nOptimized international creator\ngrowth strategies.\n\nBuilt structured performance\nanalysis frameworks.' },
+      { title: '\u{1F3E2} Valuenex \u2014 Data Analyst', text: 'Palo Alto, CA\n\nLed engagement campaigns\nusing trend analysis.\n\nAdvised executives on product\nstrategy using analytics.' },
+    ],
+  },
+  {
+    id: 'entrepreneur', name: 'Boutique',
+    x: 4, y: 20, w: 8, h: 6,
+    roof: COL.roofPink, roofDk: COL.roofPinkDark,
+    wall: '#FFF0F0', wallDk: '#F0D8D8',
+    sign: 'BOUTIQUE', signColor: COL.roofPink,
+    pages: [
+      { title: '\u{1F3EA} Whoop \u2014 Founder', text: 'Anaheim, CA\n\nDesigned and launched\nsustainable fashion products.\n\nLed brand strategy and\nmulti-platform marketing.' },
+      { title: '\u{1F3EA} Jenny Slime \u2014 CEO', text: 'Vietnam\n\nBuilt a consumer brand\nand social presence.\n\nManaged product production\nand growth strategy.' },
+    ],
+  },
+  {
+    id: 'creator', name: 'Studio',
+    x: 21, y: 9, w: 8, h: 6,
+    roof: COL.roofLavender, roofDk: COL.roofLavDark,
+    wall: COL.wallWhite, wallDk: COL.wallShadow,
+    sign: 'STUDIO', signColor: COL.roofLavender,
+    pages: [
+      { title: '\u{1F3A5} Jenny Huynh \u2014 Creator', text: 'Built a large cross-platform\naudience across social media.\n\nDeveloped brand strategy with\ninternational companies.\n\nProduced lifestyle and media\ncontent at scale.' },
+    ],
+  },
+  {
+    id: 'awards', name: 'Town Hall',
+    x: 18, y: 28, w: 11, h: 6,
+    roof: COL.roofGold, roofDk: COL.roofGoldDark,
+    wall: COL.wallCream, wallDk: COL.wallShadow,
+    sign: 'TOWN HALL', signColor: COL.roofGold,
+    pages: [
+      { title: '\u{1F3C6} Awards', text: 'Forbes Under 30 Asia\n  Media, Marketing &\n  Advertising\n\nTreeHacks\n  Best Hack Connecting\n  with Others\n\nJane Street Estimation\n  First Place' },
+    ],
+  },
+  {
+    id: 'skills', name: 'Tech Lab',
+    x: 38, y: 20, w: 8, h: 6,
+    roof: COL.roofMint, roofDk: COL.roofMintDark,
+    wall: COL.wallWhite, wallDk: COL.wallShadow,
+    sign: 'TECH LAB', signColor: COL.roofMint,
+    pages: [
+      { title: '\u{1F9E0} Technical Skills', text: 'Python \u00B7 C++ \u00B7 JavaScript\nReact Native\n\nLanguages:\n  English (native)\n  Vietnamese (fluent)\n  Chinese (conversational)' },
+    ],
+  },
+];
+
+// ═══════════════════════════════════════
+// PATHS (in tile coords)
+// ═══════════════════════════════════════
+const paths = [
+  // Main horizontal
+  { x: 2, y: 21, w: 48, h: 2 },
+  // Main vertical
+  { x: 25, y: 2, w: 2, h: 34 },
+  // Branch to University
+  { x: 10, y: 12, w: 17, h: 2 },
+  // Branch to Office
+  { x: 25, y: 12, w: 17, h: 2 },
+  // Branch to Studio
+  { x: 25, y: 15, w: 2, h: 7 },
+  // Branch to Boutique
+  { x: 8, y: 21, w: 2, h: 5 },
+  { x: 8, y: 26, w: 2, h: 2 },
+  // Branch to Lab
+  { x: 41, y: 21, w: 2, h: 5 },
+  { x: 41, y: 26, w: 2, h: 2 },
+  // Branch to Town Hall
+  { x: 23, y: 28, w: 4, h: 2 },
+  { x: 25, y: 28, w: 2, h: 6 },
+  // University entrance
+  { x: 10, y: 12, w: 2, h: 2 },
+  // Office entrance
+  { x: 38, y: 12, w: 2, h: 2 },
+  // Plaza around spawn
+  { x: 23, y: 19, w: 6, h: 5 },
+];
+
+// ═══════════════════════════════════════
+// TREES
+// ═══════════════════════════════════════
+const trees = [];
+
+function placeTrees() {
+  const occupied = new Set();
+
+  // Mark building areas and paths as occupied
+  buildings.forEach(b => {
+    for (let ty = b.y - 2; ty < b.y + b.h + 3; ty++)
+      for (let tx = b.x - 2; tx < b.x + b.w + 2; tx++)
+        occupied.add(`${tx},${ty}`);
+  });
+  paths.forEach(p => {
+    for (let ty = p.y - 1; ty < p.y + p.h + 1; ty++)
+      for (let tx = p.x - 1; tx < p.x + p.w + 1; tx++)
+        occupied.add(`${tx},${ty}`);
+  });
+  // Player spawn area
+  for (let ty = 18; ty < 24; ty++)
+    for (let tx = 22; tx < 29; tx++)
+      occupied.add(`${tx},${ty}`);
+
+  // Border trees
+  for (let tx = 0; tx < MW; tx += 2) {
+    if (!occupied.has(`${tx},0`)) trees.push({ x: tx * TILE, y: 0 * TILE, size: 1 });
+    if (!occupied.has(`${tx},1`)) trees.push({ x: tx * TILE, y: 1 * TILE, size: 1 });
+    if (!occupied.has(`${tx},${MH - 2}`)) trees.push({ x: tx * TILE, y: (MH - 2) * TILE, size: 1 });
+    if (!occupied.has(`${tx},${MH - 1}`)) trees.push({ x: tx * TILE, y: (MH - 1) * TILE, size: 1 });
+  }
+  for (let ty = 0; ty < MH; ty += 2) {
+    if (!occupied.has(`0,${ty}`)) trees.push({ x: 0, y: ty * TILE, size: 1 });
+    if (!occupied.has(`1,${ty}`)) trees.push({ x: 1 * TILE, y: ty * TILE, size: 1 });
+    if (!occupied.has(`${MW - 2},${ty}`)) trees.push({ x: (MW - 2) * TILE, y: ty * TILE, size: 1 });
+    if (!occupied.has(`${MW - 1},${ty}`)) trees.push({ x: (MW - 1) * TILE, y: ty * TILE, size: 1 });
+  }
+
+  // Scatter interior trees
+  const rng = mulberry32(42);
+  for (let i = 0; i < 120; i++) {
+    const tx = Math.floor(rng() * MW);
+    const ty = Math.floor(rng() * MH);
+    if (!occupied.has(`${tx},${ty}`) && !occupied.has(`${tx + 1},${ty}`) &&
+        !occupied.has(`${tx},${ty + 1}`) && !occupied.has(`${tx + 1},${ty + 1}`)) {
+      trees.push({ x: tx * TILE, y: ty * TILE, size: rng() > 0.5 ? 1 : 0.8 });
+      occupied.add(`${tx},${ty}`);
+      occupied.add(`${tx + 1},${ty}`);
+    }
+  }
+}
+
+function mulberry32(a) {
+  return function() {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// ═══════════════════════════════════════
+// FLOWERS
+// ═══════════════════════════════════════
+const flowers = [];
+function placeFlowers() {
+  const rng = mulberry32(99);
+  const occupied = new Set();
+  buildings.forEach(b => {
+    for (let ty = b.y - 1; ty < b.y + b.h + 2; ty++)
+      for (let tx = b.x - 1; tx < b.x + b.w + 1; tx++)
+        occupied.add(`${tx},${ty}`);
+  });
+  paths.forEach(p => {
+    for (let ty = p.y; ty < p.y + p.h; ty++)
+      for (let tx = p.x; tx < p.x + p.w; tx++)
+        occupied.add(`${tx},${ty}`);
+  });
+
+  for (let i = 0; i < 80; i++) {
+    const tx = Math.floor(rng() * MW);
+    const ty = Math.floor(rng() * MH);
+    if (!occupied.has(`${tx},${ty}`)) {
+      flowers.push({
+        x: tx * TILE + Math.floor(rng() * 10),
+        y: ty * TILE + Math.floor(rng() * 10),
+        type: Math.floor(rng() * 4),
+        phase: rng() * Math.PI * 2,
+      });
+    }
+  }
+}
+
+// ═══════════════════════════════════════
+// WATER (pond in bottom-right)
+// ═══════════════════════════════════════
+const pond = { x: 42, y: 29, w: 7, h: 5 };
+
+// ═══════════════════════════════════════
+// COLLISION
+// ═══════════════════════════════════════
+let collisionBoxes = [];
+
+function buildCollisions() {
+  collisionBoxes = [];
+
+  // Map borders
+  collisionBoxes.push({ x: -TILE, y: -TILE, w: (MW + 2) * TILE, h: TILE * 2 });
+  collisionBoxes.push({ x: -TILE, y: (MH - 1) * TILE, w: (MW + 2) * TILE, h: TILE * 2 });
+  collisionBoxes.push({ x: -TILE, y: -TILE, w: TILE * 2, h: (MH + 2) * TILE });
+  collisionBoxes.push({ x: (MW - 1) * TILE, y: -TILE, w: TILE * 2, h: (MH + 2) * TILE });
+
+  // Buildings
+  buildings.forEach(b => {
+    collisionBoxes.push({
+      x: b.x * TILE, y: b.y * TILE,
+      w: b.w * TILE, h: b.h * TILE,
+    });
+  });
+
+  // Trees
+  trees.forEach(t => {
+    collisionBoxes.push({ x: t.x + 5, y: t.y + 12, w: 6, h: 6 });
+  });
+
+  // Pond
+  collisionBoxes.push({
+    x: pond.x * TILE, y: pond.y * TILE,
+    w: pond.w * TILE, h: pond.h * TILE,
+  });
+}
+
+function canMove(nx, ny) {
+  const pw = 6, ph = 4;
+  const px = nx - pw / 2;
+  const py = ny + 4;
+
+  for (const box of collisionBoxes) {
+    if (px < box.x + box.w && px + pw > box.x &&
+        py < box.y + box.h && py + ph > box.y) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// ═══════════════════════════════════════
+// DRAWING HELPERS
+// ═══════════════════════════════════════
+function px(gx, gy, gw, gh, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(
+    Math.round(gx * S - cam.x),
+    Math.round(gy * S - cam.y),
+    Math.ceil(gw * S),
+    Math.ceil(gh * S)
+  );
+}
+
+function pxText(text, gx, gy, size, color) {
+  ctx.font = `${size}px "Press Start 2P"`;
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.fillText(text, Math.round(gx * S - cam.x), Math.round(gy * S - cam.y));
+}
+
+// ═══════════════════════════════════════
+// GROUND (cached)
+// ═══════════════════════════════════════
+let groundCache = null;
+
+function renderGroundCache() {
+  const gc = document.createElement('canvas');
+  gc.width = MW * TILE * S;
+  gc.height = MH * TILE * S;
+  const g = gc.getContext('2d');
+
+  // Base grass with checkerboard pattern
+  for (let ty = 0; ty < MH; ty++) {
+    for (let tx = 0; tx < MW; tx++) {
+      const shade = ((Math.floor(tx / 2) + Math.floor(ty / 2)) % 2 === 0) ? COL.grass1 : COL.grass2;
+      g.fillStyle = shade;
+      g.fillRect(tx * TILE * S, ty * TILE * S, TILE * S, TILE * S);
+    }
+  }
+
+  // Grass detail marks
+  const rng = mulberry32(7);
+  g.fillStyle = COL.grassDark;
+  for (let i = 0; i < 400; i++) {
+    const gx = Math.floor(rng() * MW * TILE);
+    const gy = Math.floor(rng() * MH * TILE);
+    const t = Math.floor(rng() * 3);
+    if (t === 0) {
+      g.fillRect(gx * S, gy * S, S, S * 2);
+    } else if (t === 1) {
+      g.fillRect(gx * S, gy * S, S, S);
+      g.fillRect((gx + 1) * S, (gy + 1) * S, S, S);
+    } else {
+      g.fillRect(gx * S, gy * S, S * 2, S);
+    }
+  }
+
+  // Paths
+  paths.forEach(p => {
+    // Path edge (darker)
+    g.fillStyle = COL.pathEdge;
+    g.fillRect(
+      (p.x * TILE - 1) * S, (p.y * TILE - 1) * S,
+      (p.w * TILE + 2) * S, (p.h * TILE + 2) * S
+    );
+    // Path fill
+    g.fillStyle = COL.path;
+    g.fillRect(
+      p.x * TILE * S, p.y * TILE * S,
+      p.w * TILE * S, p.h * TILE * S
+    );
+    // Path texture
+    g.fillStyle = COL.pathDark;
+    for (let py = p.y * TILE; py < (p.y + p.h) * TILE; py += 8) {
+      for (let px = p.x * TILE; px < (p.x + p.w) * TILE; px += 8) {
+        if ((Math.floor(px / 8) + Math.floor(py / 8)) % 3 === 0) {
+          g.fillRect(px * S + S, py * S + S, S, S);
+        }
+      }
+    }
+  });
+
+  // Pond water
+  // Sand edge
+  g.fillStyle = COL.sand;
+  g.fillRect(
+    (pond.x * TILE - 2) * S, (pond.y * TILE - 2) * S,
+    (pond.w * TILE + 4) * S, (pond.h * TILE + 4) * S
+  );
+  // Water base
+  g.fillStyle = COL.water;
+  g.fillRect(
+    pond.x * TILE * S, pond.y * TILE * S,
+    pond.w * TILE * S, pond.h * TILE * S
+  );
+  // Water depth gradient
+  g.fillStyle = COL.waterDark;
+  g.fillRect(
+    (pond.x * TILE + 8) * S, (pond.y * TILE + 8) * S,
+    (pond.w * TILE - 16) * S, (pond.h * TILE - 16) * S
+  );
+
+  groundCache = gc;
+}
+
+function drawGround() {
+  if (!groundCache) renderGroundCache();
+  ctx.drawImage(groundCache, -cam.x, -cam.y);
+}
+
+// ═══════════════════════════════════════
+// WATER ANIMATION (drawn on top of cached ground)
+// ═══════════════════════════════════════
+function drawWaterAnim() {
+  const px0 = pond.x * TILE;
+  const py0 = pond.y * TILE;
+  const pw = pond.w * TILE;
+  const ph = pond.h * TILE;
+
+  // Shimmering highlights
+  for (let i = 0; i < 6; i++) {
+    const phase = time * 0.03 + i * 1.2;
+    const wx = px0 + 8 + ((Math.sin(phase) * 0.5 + 0.5) * (pw - 16));
+    const wy = py0 + 6 + ((Math.cos(phase * 0.7 + i) * 0.5 + 0.5) * (ph - 12));
+    px(wx, wy, 3, 1, COL.waterLight);
+  }
+}
+
+// ═══════════════════════════════════════
+// BUILDINGS DRAWING
+// ═══════════════════════════════════════
+function drawBuilding(b) {
+  const bx = b.x * TILE;
+  const by = b.y * TILE;
+  const bw = b.w * TILE;
+  const bh = b.h * TILE;
+
+  const roofH = Math.floor(bh * 0.35);
+  const wallY = by + roofH;
+  const wallH = bh - roofH;
+
+  // Shadow
+  px(bx + 3, by + bh, bw, 4, COL.shadow);
+  px(bx + 6, by + bh + 2, bw - 6, 3, COL.shadow);
+
+  // Walls
+  px(bx, wallY, bw, wallH, b.wall);
+  // Wall shadow (right side)
+  px(bx + bw - 4, wallY, 4, wallH, b.wallDk);
+  // Wall shadow (bottom)
+  px(bx, wallY + wallH - 3, bw, 3, b.wallDk);
+
+  // Roof (stepped pyramid)
+  const steps = Math.floor(roofH / 4);
+  for (let i = 0; i < steps; i++) {
+    const frac = i / Math.max(1, steps - 1);
+    const rw = bw * (0.5 + 0.5 * frac) + 8;
+    const rx = bx + (bw - rw) / 2;
+    const ry = by + (steps - 1 - i) * 4;
+    const c = i === 0 ? b.roofDk : b.roof;
+    px(rx, ry, rw, 4, c);
+  }
+  // Roof overhang shadow
+  px(bx - 2, wallY, bw + 4, 2, b.roofDk);
+
+  // Windows
+  const windowY = wallY + 10;
+  const numWindows = Math.floor((bw - 32) / 20);
+  const windowStart = bx + (bw - numWindows * 20) / 2 + 4;
+  for (let i = 0; i < numWindows; i++) {
+    const wx = windowStart + i * 20;
+    px(wx, windowY, 10, 10, COL.windowBlue);
+    px(wx, windowY, 10, 2, COL.windowFrame);
+    px(wx + 4, windowY, 2, 10, COL.windowFrame);
+    // Light reflection
+    px(wx + 1, windowY + 3, 2, 2, COL.waterLight);
+  }
+
+  // Second row of windows for tall buildings
+  if (b.h >= 7) {
+    const wy2 = windowY + 18;
+    for (let i = 0; i < numWindows; i++) {
+      const wx = windowStart + i * 20;
+      px(wx, wy2, 10, 10, COL.windowBlue);
+      px(wx, wy2, 10, 2, COL.windowFrame);
+      px(wx + 4, wy2, 2, 10, COL.windowFrame);
+      px(wx + 1, wy2 + 3, 2, 2, COL.waterLight);
+    }
+  }
+
+  // Door
+  const doorW = 16;
+  const doorH = 20;
+  const doorX = bx + (bw - doorW) / 2;
+  const doorY = by + bh - doorH;
+  px(doorX, doorY, doorW, doorH, COL.doorBrown);
+  px(doorX, doorY, doorW, 2, COL.doorDark);
+  px(doorX + doorW - 3, doorY, 3, doorH, COL.doorDark);
+  // Doorknob
+  px(doorX + doorW - 5, doorY + doorH / 2, 2, 2, COL.roofGold);
+
+  // Sign
+  const signW = b.sign.length * 7 + 8;
+  const signX = bx + (bw - signW) / 2;
+  const signY = wallY + 3;
+  px(signX, signY, signW, 10, '#FFF8F0');
+  px(signX, signY, signW, 1, b.signColor);
+  px(signX, signY + 9, signW, 1, b.signColor);
+  pxText(b.sign, bx + bw / 2, signY + 8, 7, b.signColor);
+}
+
+// ═══════════════════════════════════════
+// TREES DRAWING
+// ═══════════════════════════════════════
+function drawTree(t) {
+  const x = t.x, y = t.y;
+  const s = t.size || 1;
+  const sw = Math.round(14 * s), sh = Math.round(18 * s);
+
+  // Shadow
+  px(x, y + sh - 2, sw, 3, COL.shadow);
+
+  // Trunk
+  const tw = Math.round(4 * s), th = Math.round(8 * s);
+  const tx = x + (sw - tw) / 2;
+  const ty = y + sh - th - 2;
+  px(tx, ty, tw, th, COL.treeTrunk);
+  px(tx + Math.round(s), ty + Math.round(s), Math.round(2 * s), th - Math.round(2 * s), COL.treeTrunkDark);
+
+  // Canopy
+  const cw = Math.round(12 * s), ch = Math.round(10 * s);
+  const cx = x + (sw - cw) / 2;
+  const cy = y;
+  // Main canopy shape
+  px(cx + 2, cy, cw - 4, ch, COL.canopy);
+  px(cx, cy + 2, cw, ch - 4, COL.canopy);
+  px(cx + 1, cy + 1, cw - 2, ch - 2, COL.canopy);
+  // Highlights
+  px(cx + 3, cy + 1, Math.round(4 * s), Math.round(3 * s), COL.canopyLight);
+  // Depth
+  px(cx + 2, cy + ch - 3, cw - 4, 2, COL.canopyDark);
+  px(cx + Math.round(6 * s), cy + 3, Math.round(3 * s), Math.round(4 * s), COL.canopyDark);
+}
+
+// ═══════════════════════════════════════
+// FLOWERS DRAWING
+// ═══════════════════════════════════════
+function drawFlower(f) {
+  const colors = [COL.flowerPink, COL.flowerYellow, COL.flowerPurple, COL.flowerWhite];
+  const c = colors[f.type];
+  const bob = Math.sin(time * 0.04 + f.phase) * 0.5;
+  const fy = f.y + bob;
+
+  // Stem
+  px(f.x + 1, fy + 3, 1, 3, COL.canopy);
+  // Petals
+  px(f.x, fy + 1, 1, 1, c);
+  px(f.x + 2, fy + 1, 1, 1, c);
+  px(f.x + 1, fy, 1, 1, c);
+  px(f.x + 1, fy + 2, 1, 1, c);
+  // Center
+  px(f.x + 1, fy + 1, 1, 1, COL.flowerCenter);
+}
+
+// ═══════════════════════════════════════
+// PLAYER DRAWING
+// ═══════════════════════════════════════
+function drawPlayer() {
+  const x = player.x - 5;
+  const y = player.y - 7;
+  const dir = player.dir;
+  const f = player.frame;
+  const bob = player.moving ? Math.sin(time * 0.3) * 0.5 : 0;
+  const dy = bob;
+
+  // Shadow
+  px(player.x - 4, player.y + 6, 8, 2, COL.shadow);
+
+  if (dir === 'down') {
+    // Hair
+    px(x + 2, y + dy, 7, 1, COL.hair);
+    px(x + 1, y + 1 + dy, 9, 2, COL.hair);
+    // Face
+    px(x + 2, y + 3 + dy, 7, 3, COL.skin);
+    // Hair sides
+    px(x + 1, y + 3 + dy, 1, 2, COL.hair);
+    px(x + 9, y + 3 + dy, 1, 2, COL.hair);
+    // Eyes
+    px(x + 3, y + 4 + dy, 2, 1, COL.eyeWhite);
+    px(x + 6, y + 4 + dy, 2, 1, COL.eyeWhite);
+    px(x + 4, y + 4 + dy, 1, 1, COL.eyes);
+    px(x + 7, y + 4 + dy, 1, 1, COL.eyes);
+    // Blush
+    px(x + 2, y + 5 + dy, 1, 1, COL.blush);
+    px(x + 8, y + 5 + dy, 1, 1, COL.blush);
+    // Body
+    px(x + 2, y + 6 + dy, 7, 1, COL.shirt);
+    px(x + 1, y + 7 + dy, 9, 3, COL.shirt);
+    px(x + 2, y + 10 + dy, 7, 1, COL.shirt);
+    // Shirt shadow
+    px(x + 1, y + 9 + dy, 9, 1, COL.shirtDark);
+    // Legs
+    if (f === 0) {
+      px(x + 3, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 6, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 3, y + 13 + dy, 2, 1, COL.shoes);
+      px(x + 6, y + 13 + dy, 2, 1, COL.shoes);
+    } else {
+      px(x + 2, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 7, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 2, y + 13 + dy, 2, 1, COL.shoes);
+      px(x + 7, y + 13 + dy, 2, 1, COL.shoes);
+    }
+  } else if (dir === 'up') {
+    // Hair (back view)
+    px(x + 2, y + dy, 7, 1, COL.hair);
+    px(x + 1, y + 1 + dy, 9, 4, COL.hair);
+    px(x + 2, y + 5 + dy, 7, 1, COL.hair);
+    // Body
+    px(x + 2, y + 6 + dy, 7, 1, COL.shirt);
+    px(x + 1, y + 7 + dy, 9, 3, COL.shirt);
+    px(x + 2, y + 10 + dy, 7, 1, COL.shirt);
+    px(x + 1, y + 9 + dy, 9, 1, COL.shirtDark);
+    // Legs
+    if (f === 0) {
+      px(x + 3, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 6, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 3, y + 13 + dy, 2, 1, COL.shoes);
+      px(x + 6, y + 13 + dy, 2, 1, COL.shoes);
+    } else {
+      px(x + 2, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 7, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 2, y + 13 + dy, 2, 1, COL.shoes);
+      px(x + 7, y + 13 + dy, 2, 1, COL.shoes);
+    }
+  } else if (dir === 'left') {
+    // Hair
+    px(x + 2, y + dy, 6, 1, COL.hair);
+    px(x + 1, y + 1 + dy, 8, 2, COL.hair);
+    // Face
+    px(x + 1, y + 3 + dy, 7, 3, COL.skin);
+    px(x + 1, y + 3 + dy, 1, 2, COL.hair);
+    // Eye
+    px(x + 3, y + 4 + dy, 2, 1, COL.eyeWhite);
+    px(x + 3, y + 4 + dy, 1, 1, COL.eyes);
+    // Blush
+    px(x + 2, y + 5 + dy, 1, 1, COL.blush);
+    // Body
+    px(x + 1, y + 6 + dy, 7, 1, COL.shirt);
+    px(x + 1, y + 7 + dy, 8, 3, COL.shirt);
+    px(x + 1, y + 10 + dy, 7, 1, COL.shirt);
+    px(x + 1, y + 9 + dy, 8, 1, COL.shirtDark);
+    // Legs
+    if (f === 0) {
+      px(x + 3, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 5, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 3, y + 13 + dy, 2, 1, COL.shoes);
+      px(x + 5, y + 13 + dy, 2, 1, COL.shoes);
+    } else {
+      px(x + 2, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 5, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 2, y + 13 + dy, 2, 1, COL.shoes);
+      px(x + 5, y + 13 + dy, 2, 1, COL.shoes);
+    }
+  } else { // right
+    px(x + 3, y + dy, 6, 1, COL.hair);
+    px(x + 2, y + 1 + dy, 8, 2, COL.hair);
+    px(x + 3, y + 3 + dy, 7, 3, COL.skin);
+    px(x + 9, y + 3 + dy, 1, 2, COL.hair);
+    px(x + 6, y + 4 + dy, 2, 1, COL.eyeWhite);
+    px(x + 7, y + 4 + dy, 1, 1, COL.eyes);
+    px(x + 8, y + 5 + dy, 1, 1, COL.blush);
+    px(x + 3, y + 6 + dy, 7, 1, COL.shirt);
+    px(x + 2, y + 7 + dy, 8, 3, COL.shirt);
+    px(x + 3, y + 10 + dy, 7, 1, COL.shirt);
+    px(x + 2, y + 9 + dy, 8, 1, COL.shirtDark);
+    if (f === 0) {
+      px(x + 4, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 6, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 4, y + 13 + dy, 2, 1, COL.shoes);
+      px(x + 6, y + 13 + dy, 2, 1, COL.shoes);
+    } else {
+      px(x + 4, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 7, y + 11 + dy, 2, 2, COL.skirt);
+      px(x + 4, y + 13 + dy, 2, 1, COL.shoes);
+      px(x + 7, y + 13 + dy, 2, 1, COL.shoes);
+    }
+  }
+
+  // Interaction prompt above head
+  if (nearBuilding && !dlgActive) {
+    const promptY = y - 6 + Math.sin(time * 0.08) * 1.5;
+    px(x + 1, promptY, 9, 6, 'rgba(42,63,42,0.85)');
+    pxText('SPACE', player.x, promptY + 5, 6, '#FAF3E0');
+  }
+}
+
+// ═══════════════════════════════════════
+// BUTTERFLIES (ambient)
+// ═══════════════════════════════════════
+const butterflies = [];
+for (let i = 0; i < 8; i++) {
+  butterflies.push({
+    x: Math.random() * MW * TILE,
+    y: Math.random() * MH * TILE * 0.8 + MH * TILE * 0.1,
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: (Math.random() - 0.5) * 0.3,
+    phase: Math.random() * Math.PI * 2,
+    color: [COL.flowerPink, COL.flowerYellow, COL.flowerPurple, '#FFF8F0'][Math.floor(Math.random() * 4)],
+  });
+}
+
+function updateButterflies() {
+  butterflies.forEach(bf => {
+    bf.x += bf.vx + Math.sin(time * 0.02 + bf.phase) * 0.3;
+    bf.y += bf.vy + Math.cos(time * 0.015 + bf.phase) * 0.2;
+    if (bf.x < 0) bf.x = MW * TILE;
+    if (bf.x > MW * TILE) bf.x = 0;
+    if (bf.y < 16) bf.y = 16;
+    if (bf.y > MH * TILE - 16) bf.y = MH * TILE - 16;
+  });
+}
+
+function drawButterflies() {
+  butterflies.forEach(bf => {
+    const wingSpread = Math.sin(time * 0.15 + bf.phase) * 2;
+    px(bf.x - 1 - Math.abs(wingSpread), bf.y, 1 + Math.abs(wingSpread), 1, bf.color);
+    px(bf.x + 1, bf.y, 1 + Math.abs(wingSpread), 1, bf.color);
+    px(bf.x, bf.y, 1, 2, COL.textDark);
+  });
+}
+
+// ═══════════════════════════════════════
+// DIALOGUE SYSTEM
+// ═══════════════════════════════════════
+function openDialogue(building) {
+  dlgActive = true;
+  dlgBuilding = building;
+  dlgPage = 0;
+  dlgCharIdx = 0;
+  const el = document.getElementById('dialogue');
+  el.style.display = 'block';
+  updateDialogueDOM();
+}
+
+function updateDialogueDOM() {
+  const page = dlgBuilding.pages[dlgPage];
+  document.getElementById('dlg-title').textContent = page.title;
+  document.getElementById('dlg-content').textContent = '';
+  document.getElementById('dlg-page').textContent =
+    dlgBuilding.pages.length > 1 ? `${dlgPage + 1}/${dlgBuilding.pages.length}` : '';
+  document.getElementById('dlg-prompt').style.visibility = 'hidden';
+  dlgCharIdx = 0;
+}
+
+function advanceDialogue() {
+  if (!dlgActive) return;
+  const page = dlgBuilding.pages[dlgPage];
+  if (dlgCharIdx < page.text.length) {
+    dlgCharIdx = page.text.length;
+    document.getElementById('dlg-content').textContent = page.text;
+    document.getElementById('dlg-prompt').style.visibility = 'visible';
+  } else if (dlgPage < dlgBuilding.pages.length - 1) {
+    dlgPage++;
+    updateDialogueDOM();
+  } else {
+    closeDialogue();
+  }
+}
+
+function closeDialogue() {
+  dlgActive = false;
+  dlgBuilding = null;
+  document.getElementById('dialogue').style.display = 'none';
+}
+
+function tickDialogue() {
+  if (!dlgActive) return;
+  const page = dlgBuilding.pages[dlgPage];
+  if (dlgCharIdx < page.text.length) {
+    dlgCharIdx++;
+    document.getElementById('dlg-content').textContent = page.text.substring(0, dlgCharIdx);
+    if (dlgCharIdx >= page.text.length) {
+      document.getElementById('dlg-prompt').style.visibility = 'visible';
+    }
+  }
+}
+
+// ═══════════════════════════════════════
+// INPUT
+// ═══════════════════════════════════════
+function startGame() {
+  if (started) return;
+  started = true;
+  document.getElementById('splash').classList.add('fade');
+  setTimeout(() => document.getElementById('splash').style.display = 'none', 1000);
+}
+
+// Click anywhere on splash to start
+document.getElementById('splash').addEventListener('click', startGame);
+
+document.addEventListener('keydown', e => {
+  if (e.repeat) return;
+  keys[e.key] = true;
+
+  if (e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault();
+    if (!started) {
+      startGame();
+      return;
+    }
+    if (dlgActive) {
+      advanceDialogue();
+      return;
+    }
+    if (nearBuilding) {
+      openDialogue(nearBuilding);
+    }
+  }
+
+  if (e.key === 'Escape' && dlgActive) {
+    closeDialogue();
+  }
+});
+
+document.addEventListener('keyup', e => {
+  keys[e.key] = false;
+});
+
+// Touch controls
+const touchDirs = {};
+document.querySelectorAll('.dpad button').forEach(btn => {
+  const dir = btn.dataset.dir;
+  const keyMap = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+  btn.addEventListener('touchstart', e => {
+    e.preventDefault();
+    keys[keyMap[dir]] = true;
+  });
+  btn.addEventListener('touchend', e => {
+    e.preventDefault();
+    keys[keyMap[dir]] = false;
+  });
+});
+
+document.getElementById('touch-action').addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (!started) {
+    startGame();
+    return;
+  }
+  if (dlgActive) { advanceDialogue(); return; }
+  if (nearBuilding) { openDialogue(nearBuilding); }
+});
+
+// ═══════════════════════════════════════
+// UPDATE
+// ═══════════════════════════════════════
+let typeTimer = 0;
+
+function update() {
+  time++;
+  if (!started) return;
+
+  // Typewriter
+  typeTimer++;
+  if (typeTimer % 2 === 0) tickDialogue();
+
+  if (dlgActive) return;
+
+  // Movement
+  player.moving = false;
+  let dx = 0, dy = 0;
+
+  if (keys['ArrowUp'] || keys['w'] || keys['W']) { dy = -player.speed; player.dir = 'up'; }
+  if (keys['ArrowDown'] || keys['s'] || keys['S']) { dy = player.speed; player.dir = 'down'; }
+  if (keys['ArrowLeft'] || keys['a'] || keys['A']) { dx = -player.speed; player.dir = 'left'; }
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) { dx = player.speed; player.dir = 'right'; }
+
+  if (dx !== 0 || dy !== 0) {
+    player.moving = true;
+    if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+    if (canMove(player.x + dx, player.y)) player.x += dx;
+    if (canMove(player.x, player.y + dy)) player.y += dy;
+  }
+
+  // Walk animation
+  if (player.moving) {
+    player.frameTimer++;
+    if (player.frameTimer > 8) {
+      player.frame = 1 - player.frame;
+      player.frameTimer = 0;
+    }
+  } else {
+    player.frame = 0;
+    player.frameTimer = 0;
+  }
+
+  // Check nearby buildings
+  nearBuilding = null;
+  for (const b of buildings) {
+    const doorX = (b.x + b.w / 2) * TILE;
+    const doorY = (b.y + b.h) * TILE + TILE;
+    const dist = Math.hypot(player.x - doorX, player.y - doorY);
+    if (dist < TILE * 2.5) {
+      nearBuilding = b;
+      break;
+    }
+  }
+
+  // Camera (smooth follow)
+  const targetX = player.x * S - canvas.width / 2;
+  const targetY = player.y * S - canvas.height / 2;
+  cam.x += (targetX - cam.x) * 0.08;
+  cam.y += (targetY - cam.y) * 0.08;
+
+  const maxCamX = Math.max(0, MW * TILE * S - canvas.width);
+  const maxCamY = Math.max(0, MH * TILE * S - canvas.height);
+  cam.x = Math.max(0, Math.min(cam.x, maxCamX));
+  cam.y = Math.max(0, Math.min(cam.y, maxCamY));
+
+  // Center if world smaller than viewport
+  if (MW * TILE * S < canvas.width) cam.x = -(canvas.width - MW * TILE * S) / 2;
+  if (MH * TILE * S < canvas.height) cam.y = -(canvas.height - MH * TILE * S) / 2;
+
+  updateButterflies();
+}
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+function render() {
+  // Clear with dark bg (visible if world doesn't fill screen)
+  ctx.fillStyle = '#1a2a1a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawGround();
+  drawWaterAnim();
+
+  // Collect all y-sorted entities
+  const entities = [];
+
+  buildings.forEach(b => {
+    entities.push({ y: (b.y + b.h) * TILE, fn: () => drawBuilding(b) });
+  });
+
+  trees.forEach(t => {
+    entities.push({ y: t.y + 16, fn: () => drawTree(t) });
+  });
+
+  entities.push({ y: player.y + 7, fn: () => drawPlayer() });
+
+  // Sort by y position (draw from top to bottom)
+  entities.sort((a, b) => a.y - b.y);
+  entities.forEach(e => e.fn());
+
+  // Flowers on top (they're flat on the ground)
+  flowers.forEach(f => drawFlower(f));
+
+  drawButterflies();
+}
+
+// ═══════════════════════════════════════
+// MINIMAP
+// ═══════════════════════════════════════
+function drawMinimap() {
+  const mc = document.createElement('canvas');
+  const mw = 160, mh = Math.round(mw * MH / MW);
+  mc.width = mw; mc.height = mh;
+  const mx = mc.getContext('2d');
+  const sx = mw / MW, sy = mh / MH;
+
+  // Background
+  mx.fillStyle = COL.grass2;
+  mx.fillRect(0, 0, mw, mh);
+
+  // Paths
+  mx.fillStyle = COL.path;
+  paths.forEach(p => {
+    mx.fillRect(p.x * sx, p.y * sy, p.w * sx, p.h * sy);
+  });
+
+  // Water
+  mx.fillStyle = COL.water;
+  mx.fillRect(pond.x * sx, pond.y * sy, pond.w * sx, pond.h * sy);
+
+  // Buildings
+  buildings.forEach(b => {
+    mx.fillStyle = b.roof;
+    mx.fillRect(b.x * sx, b.y * sy, b.w * sx, b.h * sy);
+  });
+
+  // Player
+  mx.fillStyle = time % 40 < 25 ? '#FFFFFF' : '#FFE0B2';
+  const psx = player.x / TILE * sx;
+  const psy = player.y / TILE * sy;
+  mx.fillRect(psx - 2, psy - 2, 4, 4);
+
+  return mc;
+}
+
+// Minimap element
+const minimapEl = document.createElement('canvas');
+minimapEl.id = 'minimap-display';
+minimapEl.style.cssText = 'position:fixed;bottom:14px;right:14px;z-index:90;border:2px solid #52A375;background:rgba(42,63,42,0.5);image-rendering:pixelated;';
+document.body.appendChild(minimapEl);
+
+let minimapTimer = 0;
+function updateMinimap() {
+  minimapTimer++;
+  if (minimapTimer % 6 !== 0) return;
+  const mc = drawMinimap();
+  minimapEl.width = mc.width;
+  minimapEl.height = mc.height;
+  minimapEl.getContext('2d').drawImage(mc, 0, 0);
+}
+
+// ═══════════════════════════════════════
+// GAME LOOP
+// ═══════════════════════════════════════
+function gameLoop() {
+  update();
+  render();
+  if (started) updateMinimap();
+  requestAnimationFrame(gameLoop);
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+placeTrees();
+placeFlowers();
+buildCollisions();
+renderGroundCache();
+
+// Center camera on player initially
+cam.x = player.x * S - canvas.width / 2;
+cam.y = player.y * S - canvas.height / 2;
+const maxCamX = Math.max(0, MW * TILE * S - canvas.width);
+const maxCamY = Math.max(0, MH * TILE * S - canvas.height);
+cam.x = Math.max(0, Math.min(cam.x, maxCamX));
+cam.y = Math.max(0, Math.min(cam.y, maxCamY));
+
+// Ensure page has focus for keyboard input
+window.focus();
+document.body.tabIndex = 0;
+document.body.focus();
+
+gameLoop();
+</script>
+</body>
+</html>
