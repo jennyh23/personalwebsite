@@ -90,6 +90,10 @@
     }
     #back-link:hover { background: rgba(42, 63, 42, 1); }
 
+    /* Hide back-link and hint when embedded in iframe */
+    .in-iframe #back-link,
+    .in-iframe #hint { display: none; }
+
     #hint {
       position: fixed; bottom: 14px; left: 14px; z-index: 90;
       font-size: 8px; color: rgba(250,243,224,0.5);
@@ -172,6 +176,11 @@
   </div>
 
 <script>
+// Hide UI chrome when embedded in iframe
+if (window.self !== window.top) {
+  document.body.classList.add('in-iframe');
+}
+
 // ═══════════════════════════════════════
 // SETUP
 // ═══════════════════════════════════════
@@ -179,7 +188,9 @@ const canvas = document.getElementById('world');
 const ctx = canvas.getContext('2d');
 const S = 3;
 const TILE = 16;
-const MW = 52, MH = 38;
+const MW = 28, MH = 20;
+
+let groundCache = null;
 
 function resize() {
   canvas.width = window.innerWidth;
@@ -196,9 +207,9 @@ const COL = {
   grass1: '#7BC9A0',
   grass2: '#6EC08F',
   grassDark: '#5DAF7E',
-  path: '#F5E6C8',
-  pathEdge: '#E0D0A8',
-  pathDark: '#D8C898',
+  path: '#F0DCA0',
+  pathEdge: '#D8C898',
+  pathDark: '#C8B878',
   water: '#82C8EE',
   waterLight: '#A2D8FF',
   waterDark: '#5EAAD0',
@@ -215,13 +226,27 @@ const COL = {
   eyes: '#2D1B0E',
   eyeWhite: '#FFFFFF',
   blush: '#FFB4A2',
-  shirt: '#52A375',
-  shirtDark: '#3D8A5E',
+  shirt: '#F2A0B8',
+  shirtDark: '#D88AA0',
   skirt: '#E8D5B0',
   shoes: '#8B6B4A',
   wallCream: '#FAF3E0',
   wallShadow: '#E8DCC8',
   wallWhite: '#FFF8F0',
+  sandstone: '#E8D5B0',
+  sandstoneDark: '#D4C09A',
+  sandstoneLt: '#F0E0C4',
+  towerBeige: '#E0CCA0',
+  towerBeigeDk: '#C8B488',
+  towerCap: '#D4B86A',
+  archBrown: '#8B7355',
+  fountainStone: '#D8D0C0',
+  fountainStoneDk: '#C0B8A8',
+  palmTrunk: '#9B7B55',
+  palmTrunkDk: '#806540',
+  palmFrond: '#5DAF7E',
+  palmFrondDk: '#4A9A68',
+  palmFrondLt: '#78C89A',
   doorBrown: '#8B6B4A',
   doorDark: '#705838',
   windowBlue: '#A2D2FF',
@@ -261,8 +286,8 @@ let dlgCharIdx = 0;
 let nearBuilding = null;
 
 const player = {
-  x: 25 * TILE + 8,
-  y: 20 * TILE + 8,
+  x: 14 * TILE + 8,
+  y: 15 * TILE + 8,
   w: 10, h: 14,
   dir: 'down',
   frame: 0,
@@ -279,9 +304,9 @@ const cam = { x: 0, y: 0 };
 const buildings = [
   {
     id: 'education', name: 'University',
-    x: 7, y: 5, w: 9, h: 7,
+    x: 2, y: 3, w: 4, h: 2,
     roof: COL.roofRed, roofDk: COL.roofRedDark,
-    wall: COL.wallCream, wallDk: COL.wallShadow,
+    wall: COL.sandstone, wallDk: COL.sandstoneDark,
     sign: 'STANFORD', signColor: COL.roofRed,
     pages: [
       { title: '\u{1F393} Stanford University', text: 'BS Symbolic Systems\nHCI Concentration' },
@@ -289,20 +314,18 @@ const buildings = [
     ],
   },
   {
-    id: 'experience', name: 'Offices',
-    x: 34, y: 4, w: 11, h: 8,
-    roof: COL.roofBlue, roofDk: COL.roofBlueDark,
-    wall: COL.wallWhite, wallDk: COL.wallShadow,
-    sign: 'EXPERIENCE', signColor: COL.roofBlue,
+    id: 'creator', name: 'Studio',
+    x: 22, y: 2, w: 4, h: 2,
+    roof: COL.roofLavender, roofDk: COL.roofLavDark,
+    wall: COL.sandstone, wallDk: COL.sandstoneDark,
+    sign: 'STUDIO', signColor: COL.roofLavender,
     pages: [
-      { title: '\u{1F3E2} Pika \u2014 PM Intern', text: 'Palo Alto, CA\n\nLed cross-functional product\ndesign and go-to-market for\nan AI video platform.\n\nImproved publishing workflow\nand user satisfaction.\n\nBuilt and scaled a creator\nonboarding program.' },
-      { title: '\u{1F3E2} TikTok \u2014 Product Ops', text: 'San Jose, CA\n\nImproved creator vetting systems.\n\nPartnered with engineers to\nenhance dashboard UX.\n\nOptimized international creator\ngrowth strategies.\n\nBuilt structured performance\nanalysis frameworks.' },
-      { title: '\u{1F3E2} Valuenex \u2014 Data Analyst', text: 'Palo Alto, CA\n\nLed engagement campaigns\nusing trend analysis.\n\nAdvised executives on product\nstrategy using analytics.' },
+      { title: '\u{1F3A5} Jenny Huynh \u2014 Creator', text: 'Built a large cross-platform\naudience across social media.\n\nDeveloped brand strategy with\ninternational companies.\n\nProduced lifestyle and media\ncontent at scale.' },
     ],
   },
   {
     id: 'entrepreneur', name: 'Boutique',
-    x: 4, y: 20, w: 8, h: 6,
+    x: 4, y: 8, w: 4, h: 2,
     roof: COL.roofPink, roofDk: COL.roofPinkDark,
     wall: '#FFF0F0', wallDk: '#F0D8D8',
     sign: 'BOUTIQUE', signColor: COL.roofPink,
@@ -312,20 +335,22 @@ const buildings = [
     ],
   },
   {
-    id: 'creator', name: 'Studio',
-    x: 21, y: 9, w: 8, h: 6,
-    roof: COL.roofLavender, roofDk: COL.roofLavDark,
-    wall: COL.wallWhite, wallDk: COL.wallShadow,
-    sign: 'STUDIO', signColor: COL.roofLavender,
+    id: 'experience', name: 'Offices',
+    x: 20, y: 9, w: 4, h: 2,
+    roof: COL.roofBlue, roofDk: COL.roofBlueDark,
+    wall: COL.sandstone, wallDk: COL.sandstoneDark,
+    sign: 'EXPERIENCE', signColor: COL.roofBlue,
     pages: [
-      { title: '\u{1F3A5} Jenny Huynh \u2014 Creator', text: 'Built a large cross-platform\naudience across social media.\n\nDeveloped brand strategy with\ninternational companies.\n\nProduced lifestyle and media\ncontent at scale.' },
+      { title: '\u{1F3E2} Pika \u2014 PM Intern', text: 'Palo Alto, CA\n\nLed cross-functional product\ndesign and go-to-market for\nan AI video platform.\n\nImproved publishing workflow\nand user satisfaction.\n\nBuilt and scaled a creator\nonboarding program.' },
+      { title: '\u{1F3E2} TikTok \u2014 Product Ops', text: 'San Jose, CA\n\nImproved creator vetting systems.\n\nPartnered with engineers to\nenhance dashboard UX.\n\nOptimized international creator\ngrowth strategies.\n\nBuilt structured performance\nanalysis frameworks.' },
+      { title: '\u{1F3E2} Valuenex \u2014 Data Analyst', text: 'Palo Alto, CA\n\nLed engagement campaigns\nusing trend analysis.\n\nAdvised executives on product\nstrategy using analytics.' },
     ],
   },
   {
     id: 'awards', name: 'Town Hall',
-    x: 18, y: 28, w: 11, h: 6,
+    x: 3, y: 14, w: 4, h: 2,
     roof: COL.roofGold, roofDk: COL.roofGoldDark,
-    wall: COL.wallCream, wallDk: COL.wallShadow,
+    wall: COL.sandstone, wallDk: COL.sandstoneDark,
     sign: 'TOWN HALL', signColor: COL.roofGold,
     pages: [
       { title: '\u{1F3C6} Awards', text: 'Forbes Under 30 Asia\n  Media, Marketing &\n  Advertising\n\nTreeHacks\n  Best Hack Connecting\n  with Others\n\nJane Street Estimation\n  First Place' },
@@ -333,9 +358,9 @@ const buildings = [
   },
   {
     id: 'skills', name: 'Tech Lab',
-    x: 38, y: 20, w: 8, h: 6,
+    x: 21, y: 13, w: 4, h: 2,
     roof: COL.roofMint, roofDk: COL.roofMintDark,
-    wall: COL.wallWhite, wallDk: COL.wallShadow,
+    wall: COL.sandstone, wallDk: COL.sandstoneDark,
     sign: 'TECH LAB', signColor: COL.roofMint,
     pages: [
       { title: '\u{1F9E0} Technical Skills', text: 'Python \u00B7 C++ \u00B7 JavaScript\nReact Native\n\nLanguages:\n  English (native)\n  Vietnamese (fluent)\n  Chinese (conversational)' },
@@ -343,35 +368,66 @@ const buildings = [
   },
 ];
 
+// Hoover Tower - special centerpiece building
+const hooverTower = {
+  x: 12, y: 4, w: 2, h: 5,
+  sign: 'HOOVER TOWER',
+  pages: [
+    { title: '\u{1F3DB} Hoover Tower', text: 'Stanford\'s iconic 285-foot\ntower and landmark.\n\nWelcome to Jenny\'s\nStanford Campus!' },
+  ],
+};
+
+// Palm trees along Palm Drive
+const palmTrees = [];
+for (let ty = 12; ty <= 18; ty += 3) {
+  palmTrees.push({ x: 12 * TILE, y: ty * TILE });
+  palmTrees.push({ x: 15 * TILE, y: ty * TILE });
+}
+palmTrees.push({ x: 2 * TILE, y: 2 * TILE });
+palmTrees.push({ x: 25 * TILE, y: 2 * TILE });
+palmTrees.push({ x: 9 * TILE, y: 10 * TILE });
+palmTrees.push({ x: 18 * TILE, y: 10 * TILE });
+
 // ═══════════════════════════════════════
 // PATHS (in tile coords)
 // ═══════════════════════════════════════
 const paths = [
-  // Main horizontal
-  { x: 2, y: 21, w: 48, h: 2 },
-  // Main vertical
-  { x: 25, y: 2, w: 2, h: 34 },
-  // Branch to University
-  { x: 10, y: 12, w: 17, h: 2 },
-  // Branch to Office
-  { x: 25, y: 12, w: 17, h: 2 },
-  // Branch to Studio
-  { x: 25, y: 15, w: 2, h: 7 },
-  // Branch to Boutique
-  { x: 8, y: 21, w: 2, h: 5 },
-  { x: 8, y: 26, w: 2, h: 2 },
-  // Branch to Lab
-  { x: 41, y: 21, w: 2, h: 5 },
-  { x: 41, y: 26, w: 2, h: 2 },
-  // Branch to Town Hall
-  { x: 23, y: 28, w: 4, h: 2 },
-  { x: 25, y: 28, w: 2, h: 6 },
-  // University entrance
-  { x: 10, y: 12, w: 2, h: 2 },
-  // Office entrance
-  { x: 38, y: 12, w: 2, h: 2 },
-  // Plaza around spawn
-  { x: 23, y: 19, w: 6, h: 5 },
+  // Palm Drive — winding N-S with offsets
+  { x: 13, y: 2, w: 2, h: 4 },
+  { x: 12, y: 6, w: 2, h: 3 },
+  { x: 13, y: 9, w: 2, h: 2 },
+  { x: 13, y: 13, w: 2, h: 5 },
+  // Upper path — curves toward buildings
+  { x: 4, y: 5, w: 4, h: 1 },
+  { x: 8, y: 5, w: 2, h: 1 },
+  { x: 10, y: 6, w: 3, h: 1 },
+  { x: 15, y: 5, w: 3, h: 1 },
+  { x: 18, y: 4, w: 4, h: 1 },
+  // Middle path — meanders to fountain area
+  { x: 5, y: 10, w: 3, h: 1 },
+  { x: 8, y: 10, w: 2, h: 1 },
+  { x: 17, y: 10, w: 2, h: 1 },
+  { x: 19, y: 11, w: 2, h: 1 },
+  // Lower path — connects bottom buildings
+  { x: 4, y: 16, w: 3, h: 1 },
+  { x: 7, y: 15, w: 3, h: 1 },
+  { x: 10, y: 15, w: 3, h: 1 },
+  { x: 15, y: 15, w: 3, h: 1 },
+  { x: 18, y: 15, w: 4, h: 1 },
+  // Left branch — wiggly N-S
+  { x: 5, y: 5, w: 1, h: 3 },
+  { x: 6, y: 8, w: 1, h: 2 },
+  { x: 5, y: 10, w: 1, h: 3 },
+  { x: 5, y: 13, w: 1, h: 3 },
+  // Right branch — wiggly N-S
+  { x: 22, y: 4, w: 1, h: 3 },
+  { x: 21, y: 7, w: 1, h: 3 },
+  { x: 22, y: 11, w: 1, h: 2 },
+  { x: 22, y: 13, w: 1, h: 3 },
+  // Central plaza — irregular shape around fountain
+  { x: 10, y: 10, w: 8, h: 3 },
+  { x: 11, y: 9, w: 6, h: 1 },
+  { x: 11, y: 13, w: 6, h: 1 },
 ];
 
 // ═══════════════════════════════════════
@@ -388,14 +444,29 @@ function placeTrees() {
       for (let tx = b.x - 2; tx < b.x + b.w + 2; tx++)
         occupied.add(`${tx},${ty}`);
   });
+  // Hoover Tower
+  for (let ty = hooverTower.y - 2; ty < hooverTower.y + hooverTower.h + 3; ty++)
+    for (let tx = hooverTower.x - 2; tx < hooverTower.x + hooverTower.w + 2; tx++)
+      occupied.add(`${tx},${ty}`);
   paths.forEach(p => {
     for (let ty = p.y - 1; ty < p.y + p.h + 1; ty++)
       for (let tx = p.x - 1; tx < p.x + p.w + 1; tx++)
         occupied.add(`${tx},${ty}`);
   });
+  // Fountain area
+  for (let ty = fountain.y - 2; ty < fountain.y + fountain.h + 2; ty++)
+    for (let tx = fountain.x - 2; tx < fountain.x + fountain.w + 2; tx++)
+      occupied.add(`${tx},${ty}`);
+  // Palm tree positions
+  palmTrees.forEach(pt => {
+    const tx = Math.floor(pt.x / TILE);
+    const ty = Math.floor(pt.y / TILE);
+    occupied.add(`${tx},${ty}`);
+    occupied.add(`${tx + 1},${ty}`);
+  });
   // Player spawn area
-  for (let ty = 18; ty < 24; ty++)
-    for (let tx = 22; tx < 29; tx++)
+  for (let ty = 13; ty < 17; ty++)
+    for (let tx = 12; tx < 16; tx++)
       occupied.add(`${tx},${ty}`);
 
   // Border trees
@@ -414,7 +485,7 @@ function placeTrees() {
 
   // Scatter interior trees
   const rng = mulberry32(42);
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 40; i++) {
     const tx = Math.floor(rng() * MW);
     const ty = Math.floor(rng() * MH);
     if (!occupied.has(`${tx},${ty}`) && !occupied.has(`${tx + 1},${ty}`) &&
@@ -447,13 +518,21 @@ function placeFlowers() {
       for (let tx = b.x - 1; tx < b.x + b.w + 1; tx++)
         occupied.add(`${tx},${ty}`);
   });
+  // Hoover Tower
+  for (let ty = hooverTower.y - 1; ty < hooverTower.y + hooverTower.h + 2; ty++)
+    for (let tx = hooverTower.x - 1; tx < hooverTower.x + hooverTower.w + 1; tx++)
+      occupied.add(`${tx},${ty}`);
   paths.forEach(p => {
     for (let ty = p.y; ty < p.y + p.h; ty++)
       for (let tx = p.x; tx < p.x + p.w; tx++)
         occupied.add(`${tx},${ty}`);
   });
+  // Fountain
+  for (let ty = fountain.y - 1; ty < fountain.y + fountain.h + 1; ty++)
+    for (let tx = fountain.x - 1; tx < fountain.x + fountain.w + 1; tx++)
+      occupied.add(`${tx},${ty}`);
 
-  for (let i = 0; i < 80; i++) {
+  for (let i = 0; i < 25; i++) {
     const tx = Math.floor(rng() * MW);
     const ty = Math.floor(rng() * MH);
     if (!occupied.has(`${tx},${ty}`)) {
@@ -468,9 +547,9 @@ function placeFlowers() {
 }
 
 // ═══════════════════════════════════════
-// WATER (pond in bottom-right)
+// FOUNTAIN (replaces pond)
 // ═══════════════════════════════════════
-const pond = { x: 42, y: 29, w: 7, h: 5 };
+const fountain = { x: 11, y: 10, w: 6, h: 3 };
 
 // ═══════════════════════════════════════
 // COLLISION
@@ -494,15 +573,26 @@ function buildCollisions() {
     });
   });
 
+  // Hoover Tower
+  collisionBoxes.push({
+    x: hooverTower.x * TILE, y: hooverTower.y * TILE,
+    w: hooverTower.w * TILE, h: hooverTower.h * TILE,
+  });
+
   // Trees
   trees.forEach(t => {
     collisionBoxes.push({ x: t.x + 5, y: t.y + 12, w: 6, h: 6 });
   });
 
-  // Pond
+  // Palm trees
+  palmTrees.forEach(t => {
+    collisionBoxes.push({ x: t.x + 4, y: t.y + 14, w: 5, h: 5 });
+  });
+
+  // Fountain
   collisionBoxes.push({
-    x: pond.x * TILE, y: pond.y * TILE,
-    w: pond.w * TILE, h: pond.h * TILE,
+    x: fountain.x * TILE, y: fountain.y * TILE,
+    w: fountain.w * TILE, h: fountain.h * TILE,
   });
 }
 
@@ -543,8 +633,6 @@ function pxText(text, gx, gy, size, color) {
 // ═══════════════════════════════════════
 // GROUND (cached)
 // ═══════════════════════════════════════
-let groundCache = null;
-
 function renderGroundCache() {
   const gc = document.createElement('canvas');
   gc.width = MW * TILE * S;
@@ -602,24 +690,40 @@ function renderGroundCache() {
     }
   });
 
-  // Pond water
-  // Sand edge
-  g.fillStyle = COL.sand;
+  // Fountain courtyard
+  g.fillStyle = COL.pathDark;
   g.fillRect(
-    (pond.x * TILE - 2) * S, (pond.y * TILE - 2) * S,
-    (pond.w * TILE + 4) * S, (pond.h * TILE + 4) * S
+    (fountain.x - 1) * TILE * S, (fountain.y - 1) * TILE * S,
+    (fountain.w + 2) * TILE * S, (fountain.h + 2) * TILE * S
   );
-  // Water base
+  g.fillStyle = COL.path;
+  g.fillRect(
+    fountain.x * TILE * S, fountain.y * TILE * S,
+    fountain.w * TILE * S, fountain.h * TILE * S
+  );
+  // Fountain basin (stone ring)
+  const fi = 3;
+  g.fillStyle = COL.fountainStone;
+  g.fillRect(
+    (fountain.x * TILE + fi) * S, (fountain.y * TILE + fi) * S,
+    (fountain.w * TILE - fi * 2) * S, (fountain.h * TILE - fi * 2) * S
+  );
+  g.fillStyle = COL.fountainStoneDk;
+  g.fillRect(
+    (fountain.x * TILE + fi) * S, (fountain.y * TILE + fountain.h * TILE - fi - 2) * S,
+    (fountain.w * TILE - fi * 2) * S, 2 * S
+  );
+  // Fountain water
+  const wi = 6;
   g.fillStyle = COL.water;
   g.fillRect(
-    pond.x * TILE * S, pond.y * TILE * S,
-    pond.w * TILE * S, pond.h * TILE * S
+    (fountain.x * TILE + wi) * S, (fountain.y * TILE + wi) * S,
+    (fountain.w * TILE - wi * 2) * S, (fountain.h * TILE - wi * 2) * S
   );
-  // Water depth gradient
   g.fillStyle = COL.waterDark;
   g.fillRect(
-    (pond.x * TILE + 8) * S, (pond.y * TILE + 8) * S,
-    (pond.w * TILE - 16) * S, (pond.h * TILE - 16) * S
+    (fountain.x * TILE + wi + 4) * S, (fountain.y * TILE + wi + 3) * S,
+    (fountain.w * TILE - wi * 2 - 8) * S, (fountain.h * TILE - wi * 2 - 6) * S
   );
 
   groundCache = gc;
@@ -631,104 +735,216 @@ function drawGround() {
 }
 
 // ═══════════════════════════════════════
-// WATER ANIMATION (drawn on top of cached ground)
+// FOUNTAIN ANIMATION
 // ═══════════════════════════════════════
-function drawWaterAnim() {
-  const px0 = pond.x * TILE;
-  const py0 = pond.y * TILE;
-  const pw = pond.w * TILE;
-  const ph = pond.h * TILE;
+function drawFountainAnim() {
+  const cx = (fountain.x + fountain.w / 2) * TILE;
+  const cy = (fountain.y + fountain.h / 2) * TILE;
 
-  // Shimmering highlights
-  for (let i = 0; i < 6; i++) {
-    const phase = time * 0.03 + i * 1.2;
-    const wx = px0 + 8 + ((Math.sin(phase) * 0.5 + 0.5) * (pw - 16));
-    const wy = py0 + 6 + ((Math.cos(phase * 0.7 + i) * 0.5 + 0.5) * (ph - 12));
-    px(wx, wy, 3, 1, COL.waterLight);
+  // Water spray particles
+  for (let i = 0; i < 5; i++) {
+    const phase = time * 0.05 + i * 1.2;
+    const t = (Math.sin(phase) * 0.5 + 0.5);
+    const dropY = cy - t * 8;
+    const dropX = cx + Math.sin(phase * 2.3 + i) * (2 + t * 3);
+    if (t > 0.1) {
+      px(dropX, dropY, 1, 1, COL.waterLight);
+    }
+  }
+
+  // Surface shimmer
+  for (let i = 0; i < 3; i++) {
+    const phase = time * 0.03 + i * 2.0;
+    const wx = fountain.x * TILE + 7 + ((Math.sin(phase) * 0.5 + 0.5) * (fountain.w * TILE - 14));
+    const wy = fountain.y * TILE + 7 + ((Math.cos(phase * 0.7) * 0.5 + 0.5) * (fountain.h * TILE - 14));
+    px(wx, wy, 2, 1, COL.waterLight);
   }
 }
 
 // ═══════════════════════════════════════
-// BUILDINGS DRAWING
+// BUILDINGS DRAWING (cute Stanford style)
 // ═══════════════════════════════════════
 function drawBuilding(b) {
   const bx = b.x * TILE;
   const by = b.y * TILE;
-  const bw = b.w * TILE;
-  const bh = b.h * TILE;
+  const bw = b.w * TILE;  // 64
+  const bh = b.h * TILE;  // 32
 
-  const roofH = Math.floor(bh * 0.35);
+  const roofH = 10;
   const wallY = by + roofH;
   const wallH = bh - roofH;
 
   // Shadow
-  px(bx + 3, by + bh, bw, 4, COL.shadow);
-  px(bx + 6, by + bh + 2, bw - 6, 3, COL.shadow);
+  px(bx + 2, by + bh, bw, 2, COL.shadow);
 
   // Walls
   px(bx, wallY, bw, wallH, b.wall);
-  // Wall shadow (right side)
-  px(bx + bw - 4, wallY, 4, wallH, b.wallDk);
-  // Wall shadow (bottom)
-  px(bx, wallY + wallH - 3, bw, 3, b.wallDk);
+  px(bx + bw - 2, wallY, 2, wallH, b.wallDk);
+  px(bx, wallY + wallH - 1, bw, 1, b.wallDk);
 
-  // Roof (stepped pyramid)
-  const steps = Math.floor(roofH / 4);
-  for (let i = 0; i < steps; i++) {
-    const frac = i / Math.max(1, steps - 1);
-    const rw = bw * (0.5 + 0.5 * frac) + 8;
-    const rx = bx + (bw - rw) / 2;
-    const ry = by + (steps - 1 - i) * 4;
-    const c = i === 0 ? b.roofDk : b.roof;
-    px(rx, ry, rw, 4, c);
+  // Stair-step peaked roof
+  const roofCx = bx + bw / 2;
+  for (let i = 0; i < 5; i++) {
+    const rw = bw + 4 - i * (bw / 5);
+    const ry = by + roofH - (i + 1) * 2;
+    px(roofCx - rw / 2, ry, rw, 2, i === 4 ? b.roofDk : b.roof);
   }
-  // Roof overhang shadow
-  px(bx - 2, wallY, bw + 4, 2, b.roofDk);
+  // Overhang
+  px(bx - 2, wallY, bw + 4, 1, b.roofDk);
 
-  // Windows
-  const windowY = wallY + 10;
-  const numWindows = Math.floor((bw - 32) / 20);
-  const windowStart = bx + (bw - numWindows * 20) / 2 + 4;
-  for (let i = 0; i < numWindows; i++) {
-    const wx = windowStart + i * 20;
-    px(wx, windowY, 10, 10, COL.windowBlue);
-    px(wx, windowY, 10, 2, COL.windowFrame);
-    px(wx + 4, windowY, 2, 10, COL.windowFrame);
-    // Light reflection
-    px(wx + 1, windowY + 3, 2, 2, COL.waterLight);
-  }
+  // Windows (one each side, 4×4)
+  const winY = wallY + 4;
+  px(bx + 6, winY, 4, 4, COL.windowBlue);
+  px(bx + 6, winY, 4, 1, COL.windowFrame);
+  px(bx + 7, winY, 2, 4, COL.windowFrame);
+  px(bx + bw - 10, winY, 4, 4, COL.windowBlue);
+  px(bx + bw - 10, winY, 4, 1, COL.windowFrame);
+  px(bx + bw - 9, winY, 2, 4, COL.windowFrame);
 
-  // Second row of windows for tall buildings
-  if (b.h >= 7) {
-    const wy2 = windowY + 18;
-    for (let i = 0; i < numWindows; i++) {
-      const wx = windowStart + i * 20;
-      px(wx, wy2, 10, 10, COL.windowBlue);
-      px(wx, wy2, 10, 2, COL.windowFrame);
-      px(wx + 4, wy2, 2, 10, COL.windowFrame);
-      px(wx + 1, wy2 + 3, 2, 2, COL.waterLight);
-    }
-  }
-
-  // Door
-  const doorW = 16;
-  const doorH = 20;
+  // Door (centered, 6×10)
+  const doorW = 6;
+  const doorH = 10;
   const doorX = bx + (bw - doorW) / 2;
   const doorY = by + bh - doorH;
   px(doorX, doorY, doorW, doorH, COL.doorBrown);
-  px(doorX, doorY, doorW, 2, COL.doorDark);
-  px(doorX + doorW - 3, doorY, 3, doorH, COL.doorDark);
-  // Doorknob
-  px(doorX + doorW - 5, doorY + doorH / 2, 2, 2, COL.roofGold);
+  px(doorX + 1, doorY - 1, doorW - 2, 1, COL.doorBrown);
+  px(doorX + doorW - 1, doorY, 1, doorH, COL.doorDark);
+  px(doorX + doorW - 2, doorY + doorH / 2, 1, 1, COL.roofGold);
 
   // Sign
-  const signW = b.sign.length * 7 + 8;
+  const signW = Math.min(b.sign.length * 7 + 6, bw + 8);
   const signX = bx + (bw - signW) / 2;
-  const signY = wallY + 3;
-  px(signX, signY, signW, 10, '#FFF8F0');
+  const signY = wallY + 1;
+  px(signX, signY, signW, 9, '#FFF8F0');
   px(signX, signY, signW, 1, b.signColor);
-  px(signX, signY + 9, signW, 1, b.signColor);
+  px(signX, signY + 8, signW, 1, b.signColor);
   pxText(b.sign, bx + bw / 2, signY + 8, 7, b.signColor);
+}
+
+// ═══════════════════════════════════════
+// HOOVER TOWER
+// ═══════════════════════════════════════
+function drawHooverTower() {
+  const t = hooverTower;
+  const bx = t.x * TILE;
+  const by = t.y * TILE;
+  const bw = t.w * TILE;  // 32
+  const bh = t.h * TILE;  // 80
+  const cx = bx + bw / 2;
+  const bottom = by + bh;
+  const P = 2; // uniform pixel block size
+
+  // Shadow
+  px(bx + 2, bottom, bw, 3, COL.shadow);
+
+  // ═══ NARROW RECTANGULAR SHAFT ═══
+  px(bx, by, bw, bh, COL.towerBeige);
+  px(bx + bw - P, by, P, bh, COL.towerBeigeDk);
+
+  // ═══ HORIZONTAL CORNICE BANDS ═══
+  px(bx - P, by, bw + P * 2, P, COL.sandstoneLt);
+  px(bx - P, by + 22, bw + P * 2, P, COL.sandstoneLt);
+  px(bx - P, bottom - 16, bw + P * 2, P, COL.sandstoneLt);
+  px(bx - P, bottom - P, bw + P * 2, P, COL.sandstoneDark);
+
+  // ═══ WINDOW SLITS (2px wide, symmetric) ═══
+  const slitH = 6;
+  px(bx + 5, by + 8, P, slitH, COL.windowBlue);
+  px(bx + bw - 5 - P, by + 8, P, slitH, COL.windowBlue);
+  px(bx + 5, by + 26, P, slitH, COL.windowBlue);
+  px(bx + bw - 5 - P, by + 26, P, slitH, COL.windowBlue);
+  px(bx + 5, by + 42, P, slitH, COL.windowBlue);
+  px(bx + bw - 5 - P, by + 42, P, slitH, COL.windowBlue);
+
+  // ═══ ARCH DOORWAY ═══
+  const doorW = 8;
+  const doorH = 12;
+  const doorX = cx - doorW / 2;
+  const doorY = bottom - doorH;
+  px(doorX, doorY + 4, doorW, doorH - 4, COL.archBrown);
+  px(doorX + P, doorY + P, doorW - P * 2, P * 2, COL.archBrown);
+  px(doorX, doorY + P * 2, P, P, COL.archBrown);
+  px(doorX + doorW - P, doorY + P * 2, P, P, COL.archBrown);
+  px(doorX + P, doorY + 6, doorW - P * 2, doorH - 6, '#5A4A38');
+
+  // ═══ RED PIXELATED TRIANGLE TOP ═══
+  const roofDark = '#8B3A3A';
+  const roofMid = '#A04545';
+  const roofLight = '#B85050';
+  // Stair-step triangle: each layer P tall, shrinks by P each side
+  const triBase = bw + 4;
+  const layers = Math.floor(triBase / (P * 2));
+  for (let i = 0; i < layers; i++) {
+    const lw = triBase - i * P * 2;
+    if (lw < P) break;
+    const color = i < 2 ? roofDark : (i < layers - 2 ? roofMid : roofLight);
+    px(cx - lw / 2, by - (i + 1) * P, lw, P, color);
+  }
+  // Eaves overhang
+  px(cx - (triBase + 2) / 2, by - P, triBase + 2, P, roofDark);
+  // Finial point
+  const tipY = by - layers * P;
+  px(cx - 1, tipY - 3, P, 3, COL.towerCap);
+
+  // ═══ SIGN ═══
+  const signText = 'HOOVER';
+  const signW = signText.length * 7 + 6;
+  const signSX = cx - signW / 2;
+  const signSY = bottom - doorH - 12;
+  px(signSX, signSY, signW, 9, '#FFF8F0');
+  px(signSX, signSY, signW, 1, COL.towerCap);
+  px(signSX, signSY + 8, signW, 1, COL.towerCap);
+  pxText(signText, cx, signSY + 8, 7, COL.towerCap);
+}
+
+// ═══════════════════════════════════════
+// PALM TREES
+// ═══════════════════════════════════════
+function drawPalmTree(t) {
+  const x = t.x, y = t.y;
+
+  // Shadow
+  px(x - 2, y + 20, 12, 2, COL.shadow);
+
+  // Trunk (curved, 18px tall)
+  px(x + 4, y + 6, 3, 14, COL.palmTrunk);
+  px(x + 5, y + 6, 1, 14, COL.palmTrunkDk);
+  px(x + 3, y + 4, 3, 4, COL.palmTrunk);
+
+  // Trunk ring markings
+  for (let r = 0; r < 4; r++) {
+    px(x + 4, y + 8 + r * 3, 3, 1, COL.palmTrunkDk);
+  }
+
+  // Coconuts
+  px(x + 3, y + 4, 2, 2, COL.doorBrown);
+  px(x + 6, y + 3, 2, 2, COL.doorBrown);
+  px(x + 4, y + 3, 2, 2, COL.doorDark);
+
+  // Fronds (simplified fan shape)
+  const frondSets = [
+    // Left fronds
+    [[-1,-1],[-2,-1],[-2,0],[-3,0],[-2,1],[-1,1]],
+    [[-1,-2],[-1,-1],[-2,0],[-2,1]],
+    // Right fronds
+    [[1,-1],[2,-1],[2,0],[3,0],[2,1],[1,1]],
+    [[1,-2],[1,-1],[2,0],[2,1]],
+    // Top fronds
+    [[0,-1],[0,-2],[-1,-2],[1,-2],[0,-3]],
+    [[0,-1],[1,-1],[-1,-1],[0,-2]],
+  ];
+  const frondColors = [COL.palmFrond, COL.palmFrondDk, COL.palmFrond, COL.palmFrondDk, COL.palmFrondLt, COL.palmFrond];
+  const crownX = x + 4;
+  const crownY = y + 2;
+
+  frondSets.forEach((steps, idx) => {
+    let fx = crownX, fy = crownY;
+    steps.forEach(([sdx, sdy]) => {
+      fx += sdx;
+      fy += sdy;
+      px(fx, fy, 2, 1, frondColors[idx]);
+    });
+  });
 }
 
 // ═══════════════════════════════════════
@@ -799,6 +1015,9 @@ function drawPlayer() {
   px(player.x - 4, player.y + 6, 8, 2, COL.shadow);
 
   if (dir === 'down') {
+    // Ponytail (behind, peeks on right side)
+    px(x + 9, y + 3 + dy, 2, 5, COL.hair);
+    px(x + 10, y + 5 + dy, 1, 4, COL.hair);
     // Hair
     px(x + 2, y + dy, 7, 1, COL.hair);
     px(x + 1, y + 1 + dy, 9, 2, COL.hair);
@@ -834,6 +1053,10 @@ function drawPlayer() {
       px(x + 7, y + 13 + dy, 2, 1, COL.shoes);
     }
   } else if (dir === 'up') {
+    // Ponytail (back view, fully visible)
+    px(x + 4, y + 2 + dy, 3, 1, COL.hair);
+    px(x + 4, y + 3 + dy, 2, 6, COL.hair);
+    px(x + 5, y + 7 + dy, 1, 3, COL.hair);
     // Hair (back view)
     px(x + 2, y + dy, 7, 1, COL.hair);
     px(x + 1, y + 1 + dy, 9, 4, COL.hair);
@@ -856,6 +1079,9 @@ function drawPlayer() {
       px(x + 7, y + 13 + dy, 2, 1, COL.shoes);
     }
   } else if (dir === 'left') {
+    // Ponytail (hangs on back/right side)
+    px(x + 8, y + 3 + dy, 2, 5, COL.hair);
+    px(x + 9, y + 5 + dy, 1, 4, COL.hair);
     // Hair
     px(x + 2, y + dy, 6, 1, COL.hair);
     px(x + 1, y + 1 + dy, 8, 2, COL.hair);
@@ -885,6 +1111,10 @@ function drawPlayer() {
       px(x + 5, y + 13 + dy, 2, 1, COL.shoes);
     }
   } else { // right
+    // Ponytail (hangs on back/left side)
+    px(x, y + 3 + dy, 2, 5, COL.hair);
+    px(x, y + 5 + dy, 1, 4, COL.hair);
+    // Hair
     px(x + 3, y + dy, 6, 1, COL.hair);
     px(x + 2, y + 1 + dy, 8, 2, COL.hair);
     px(x + 3, y + 3 + dy, 7, 3, COL.skin);
@@ -921,7 +1151,7 @@ function drawPlayer() {
 // BUTTERFLIES (ambient)
 // ═══════════════════════════════════════
 const butterflies = [];
-for (let i = 0; i < 8; i++) {
+for (let i = 0; i < 5; i++) {
   butterflies.push({
     x: Math.random() * MW * TILE,
     y: Math.random() * MH * TILE * 0.8 + MH * TILE * 0.1,
@@ -1018,15 +1248,18 @@ function startGame() {
   setTimeout(() => document.getElementById('splash').style.display = 'none', 1000);
 }
 
-// Click anywhere on splash to start
+// Click anywhere to start (splash or document)
 document.getElementById('splash').addEventListener('click', startGame);
+document.addEventListener('click', () => {
+  if (!started) startGame();
+});
 
-document.addEventListener('keydown', e => {
+window.addEventListener('keydown', e => {
+  if (e.key === ' ') e.preventDefault();
   if (e.repeat) return;
   keys[e.key] = true;
 
   if (e.key === ' ' || e.key === 'Enter') {
-    e.preventDefault();
     if (!started) {
       startGame();
       return;
@@ -1043,11 +1276,12 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && dlgActive) {
     closeDialogue();
   }
-});
+}, true);
 
-document.addEventListener('keyup', e => {
+window.addEventListener('keyup', e => {
+  if (e.key === ' ') e.preventDefault();
   keys[e.key] = false;
-});
+}, true);
 
 // Touch controls
 const touchDirs = {};
@@ -1123,9 +1357,18 @@ function update() {
     const doorX = (b.x + b.w / 2) * TILE;
     const doorY = (b.y + b.h) * TILE + TILE;
     const dist = Math.hypot(player.x - doorX, player.y - doorY);
-    if (dist < TILE * 2.5) {
+    if (dist < TILE * 2) {
       nearBuilding = b;
       break;
+    }
+  }
+  // Check Hoover Tower proximity
+  if (!nearBuilding) {
+    const htDoorX = (hooverTower.x + hooverTower.w / 2) * TILE;
+    const htDoorY = (hooverTower.y + hooverTower.h) * TILE + TILE;
+    const htDist = Math.hypot(player.x - htDoorX, player.y - htDoorY);
+    if (htDist < TILE * 2) {
+      nearBuilding = hooverTower;
     }
   }
 
@@ -1156,7 +1399,7 @@ function render() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   drawGround();
-  drawWaterAnim();
+  drawFountainAnim();
 
   // Collect all y-sorted entities
   const entities = [];
@@ -1165,8 +1408,19 @@ function render() {
     entities.push({ y: (b.y + b.h) * TILE, fn: () => drawBuilding(b) });
   });
 
+  // Hoover Tower
+  entities.push({
+    y: (hooverTower.y + hooverTower.h) * TILE,
+    fn: () => drawHooverTower()
+  });
+
   trees.forEach(t => {
     entities.push({ y: t.y + 16, fn: () => drawTree(t) });
+  });
+
+  // Palm trees
+  palmTrees.forEach(t => {
+    entities.push({ y: t.y + 20, fn: () => drawPalmTree(t) });
   });
 
   entities.push({ y: player.y + 7, fn: () => drawPlayer() });
@@ -1201,15 +1455,19 @@ function drawMinimap() {
     mx.fillRect(p.x * sx, p.y * sy, p.w * sx, p.h * sy);
   });
 
-  // Water
+  // Fountain
   mx.fillStyle = COL.water;
-  mx.fillRect(pond.x * sx, pond.y * sy, pond.w * sx, pond.h * sy);
+  mx.fillRect(fountain.x * sx, fountain.y * sy, fountain.w * sx, fountain.h * sy);
 
   // Buildings
   buildings.forEach(b => {
     mx.fillStyle = b.roof;
     mx.fillRect(b.x * sx, b.y * sy, b.w * sx, b.h * sy);
   });
+
+  // Hoover Tower
+  mx.fillStyle = COL.towerCap;
+  mx.fillRect(hooverTower.x * sx, hooverTower.y * sy, hooverTower.w * sx, hooverTower.h * sy);
 
   // Player
   mx.fillStyle = time % 40 < 25 ? '#FFFFFF' : '#FFE0B2';
@@ -1262,10 +1520,9 @@ const maxCamY = Math.max(0, MH * TILE * S - canvas.height);
 cam.x = Math.max(0, Math.min(cam.x, maxCamX));
 cam.y = Math.max(0, Math.min(cam.y, maxCamY));
 
-// Ensure page has focus for keyboard input
+// Ensure splash has focus for keyboard input
 window.focus();
-document.body.tabIndex = 0;
-document.body.focus();
+document.getElementById('splash').focus();
 
 gameLoop();
 </script>
